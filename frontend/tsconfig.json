@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["vite/client", "node"],
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] },
+    "noEmit": true
+  },
+  "include": ["src/**/*"],
+  "references": [{ "path": "../packages/shared" }]
+}

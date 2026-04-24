@@ -1,0 +1,6 @@
+﻿frontend/src/pages/dev/TablesPage.tsx(145,28): error TS2322: Type 'Promise<Record<string, unknown>>' is not assignable to type 'void | Promise<void>'.
+  Type 'Promise<Record<string, unknown>>' is not assignable to type 'Promise<void>'.
+    Type 'Record<string, unknown>' is not assignable to type 'void'.
+frontend/src/pages/dev/TablesPage.tsx(156,30): error TS2322: Type 'Promise<Record<string, unknown>>' is not assignable to type 'void | Promise<void>'.
+  Type 'Promise<Record<string, unknown>>' is not assignable to type 'Promise<void>'.
+    Type 'Record<string, unknown>' is not assignable to type 'void'.

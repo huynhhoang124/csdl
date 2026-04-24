@@ -1,0 +1,320 @@
+# 🎯 DỰ ÁN: QLDH — Full-Stack + Auto Demo Data + Self-Test + Pluggable Backend
+
+Bạn là **Senior Full-Stack Engineer + QA Automation + Software Architect**. Xây dựng web app quản lý đào tạo dựa trên CSDL MSSQL có sẵn (26 bảng), **tự sinh dữ liệu demo**, **tự kiểm thử**, và **thiết kế backend có thể thay thế dễ dàng** (mock-server hiện tại → backend production sau này).
+
+---
+
+## 🧠 QUY TẮC LÀM VIỆC
+
+### Agent Skills
+1. **Planning-first**: `todo_list` trước khi code, cập nhật liên tục
+2. **Parallel exploration**: gọi `code_search` + `grep_search` + `read_file` song song
+3. **Context retrieval**: đọc migration + seeders + `config.json` trước khi viết model
+4. **Incremental delivery**: edit < 300 dòng/lần
+5. **Self-verification**: chạy test sau mỗi phân hệ, báo cáo kết quả
+6. **No hallucination**: đối chiếu schema thực tế, không đoán
+
+### Code standards
+- **TypeScript strict** cả FE & BE
+- Giữ tên schema tiếng Việt không dấu (`MSV`, `maMon`...)
+- File < 400 dòng
+- `.env` cho mọi config
+- Zod validation + error handling đầy đủ
+
+---
+
+## 🔌 KIẾN TRÚC PLUGGABLE BACKEND (ĐIỂM CỐT LÕI)
+
+**Nguyên tắc**: Frontend KHÔNG được biết backend là gì. Chuyển backend chỉ cần đổi 1 biến môi trường.
+
+### Lớp trừu tượng (Repository Pattern + Adapter)
+
+```
+frontend/src/lib/api/
+├── contracts/                   # ⭐ INTERFACE chung - SSOT
+│   ├── IStudentRepository.ts
+│   ├── ITeacherRepository.ts
+│   ├── IGradeRepository.ts
+│   ├── ICourseRepository.ts
+│   └── ... (1 interface / bảng nghiệp vụ)
+├── types/                       # Type định nghĩa entity (từ Zod schema)
+│   ├── entities.ts              # SinhVien, CanBo, Mon, BangDiem...
+│   └── dto.ts                   # Request/Response DTO
+├── adapters/                    # ⭐ Implementation có thể HOÁN ĐỔI
+│   ├── rest/                    # REST adapter (mặc định)
+│   │   ├── RestStudentRepository.ts
+│   │   └── ...
+│   ├── mock/                    # In-memory mock (dev offline)
+│   │   ├── MockStudentRepository.ts
+│   │   └── mockDatabase.ts      # faker sinh data
+│   ├── graphql/                 # GraphQL adapter (future)
+│   └── supabase/                # Supabase adapter (future)
+├── factory.ts                   # ⭐ chọn adapter theo env
+└── index.ts                     # export useStudentApi(), useGradeApi()...
+```
+
+### File `factory.ts` — heart of pluggability
+```ts
+// frontend/src/lib/api/factory.ts
+import type { IStudentRepository } from './contracts/IStudentRepository';
+import { RestStudentRepository } from './adapters/rest/RestStudentRepository';
+import { MockStudentRepository } from './adapters/mock/MockStudentRepository';
+
+const BACKEND = import.meta.env.VITE_BACKEND_MODE; // 'rest' | 'mock' | 'graphql' | 'supabase'
+
+export const studentRepo: IStudentRepository = (() => {
+  switch (BACKEND) {
+    case 'mock': return new MockStudentRepository();
+    case 'rest': return new RestStudentRepository();
+    // case 'graphql': return new GraphQLStudentRepository();
+    // case 'supabase': return new SupabaseStudentRepository();
+    default: return new RestStudentRepository();
+  }
+})();
+```
+
+### Đổi backend sau này chỉ cần:
+1. Tạo thêm adapter mới implement `IStudentRepository` (VD: `FirebaseStudentRepository`)
+2. Đăng ký trong `factory.ts`
+3. Đổi `VITE_BACKEND_MODE=firebase` trong `.env`
+4. **FE component/page KHÔNG sửa 1 dòng nào**
+
+### Quy tắc vàng
+- ❌ Cấm `axios.get()` trực tiếp trong component/page
+- ❌ Cấm `fetch()` trực tiếp
+- ✅ Luôn qua repository: `studentRepo.findById(msv)`
+- ✅ TanStack Query wrap repository: `useQuery(['student', id], () => studentRepo.findById(id))`
+- ✅ Mọi DTO định nghĩa bằng **Zod schema** → infer TypeScript type → dùng được cả FE & BE
+
+### Shared contract package (tuỳ chọn nhưng nên có)
+```
+packages/
+└── shared/                      # workspace package
+    ├── schemas/                 # Zod schemas dùng chung FE + BE
+    │   ├── sinhVien.schema.ts
+    │   └── ...
+    └── types/                   # inferred types
+```
+→ BE validate request bằng chính schema này, FE validate form cũng schema này → **1 nguồn sự thật**.
+
+---
+
+## 🏗️ STRUCTURE TỔNG THỂ
+
+```
+qldh/
+├── backend/                     # Express + Sequelize + MSSQL
+│   ├── migrations/              # có sẵn
+│   ├── seeders/                 # có sẵn + demo seeder
+│   ├── models/
+│   ├── routes/{auth,student,teacher,dev}.routes.ts
+│   ├── controllers/
+│   ├── services/gpa.service.ts
+│   ├── scripts/generate-demo-data.ts
+│   ├── tests/{unit,integration,e2e}/
+│   └── server.ts
+├── frontend/                    # React + Vite
+│   ├── src/
+│   │   ├── lib/api/             # ⭐ pluggable layer ở đây
+│   │   ├── pages/{auth,student,teacher,dev}/
+│   │   ├── components/{ui,layout,shared,charts}/
+│   │   ├── hooks/               # useStudent, useGrade... gọi repo
+│   │   ├── store/               # Zustand
+│   │   └── App.tsx
+│   └── tests/{components,e2e}/
+├── packages/shared/             # Zod schemas + types dùng chung
+├── docker-compose.yml           # MSSQL + backend + frontend
+└── README.md
+```
+
+---
+
+## 🔐 PHÂN QUYỀN (3 ROLE)
+
+| Role | Đăng nhập | Quyền |
+|---|---|---|
+| **student** | MSV + password | Trang cá nhân, bảng điểm, đăng ký lớp/HB/NCKH/SK/du học |
+| **teacher** | MCB + password | Lớp phụ trách, nhập điểm, QL đồ án/NCKH hướng dẫn |
+| **dev** ⭐ | `dev@qldh.local / dev123` | Dev Console toàn quyền |
+
+### Dev Console (yêu cầu đặc biệt)
+- CRUD 26 bảng (datatable generic + form động sinh từ Zod schema)
+- Raw SQL query log realtime
+- **Reset & Reseed DB** 1 click
+- **Impersonate** student/teacher bất kỳ
+- **API Playground** embedded (như Postman)
+- **ER Diagram** (react-flow)
+- **Test Runner UI**: chạy Jest/Playwright ngay trong web, xem kết quả live
+- **Backend Switcher**: dropdown đổi `mock/rest/graphql` runtime (lưu localStorage) — demo rõ tính pluggable
+- Dashboard thống kê toàn hệ thống
+
+---
+
+## 🎲 AUTO-GENERATE DEMO DATA
+
+### File `backend/scripts/generate-demo-data.ts`
+Dùng **@faker-js/faker** locale `vi`:
+
+| Bảng | SL | Ghi chú |
+|---|---:|---|
+| `ttcn` | 200 | Tên VN, CCCD 12 số, SĐT VN, 63 tỉnh |
+| `sinhVien` | 150 | GPA 1.5-4.0 phân bố normal, K62-K66 |
+| `canBo` | 30 | 5 trưởng khoa + 25 GV |
+| `Khoa` | 5 | CNTT, Điện, Cơ khí, Kinh tế, Ngoại ngữ |
+| `heDaoTao` | 3 | CQ, LT, CLC |
+| `bac` | 3 | ĐH, CĐ, ThS |
+| `chuongTrinhDaoTao` | 8 | |
+| `chuyenNganh` | 15 | 3/khoa |
+| `mon` | 80 | Cơ sở, chuyên ngành, tự chọn |
+| `monDaoTao` | 200 | |
+| `monTienQuyet` | 50 | Chuỗi hợp lý |
+| `bangDiem` | 2000+ | 10-20 môn/SV |
+| `lopHanhChinh` | 15 | |
+| `lopTinChi` | 40 | 3 kỳ 20261-20263 |
+| `sinhVien_LopTinChi` | 600+ | 4-5 lớp/SV/kỳ |
+| `hocBong` | 10 | Đa loại |
+| `sinhVien_HocBong` | 40 | Top GPA |
+| `nghienCuu` | 15 | |
+| `doAnTN` | 20 | |
+| `duHoc` | 8 | |
+| `suKien` | 25 | Đa loại |
+| `sinhVien_SuKien` | 300+ | |
+
+### MockDatabase cho frontend
+File `frontend/src/lib/api/adapters/mock/mockDatabase.ts` cũng dùng faker sinh **cùng seed** để demo offline không cần backend.
+
+---
+
+## 🧪 SELF-TESTING
+
+### Backend
+- **Unit test** (Jest): service, util, validator
+- **Integration test** (Supertest): mọi API endpoint
+- **E2E** (Playwright): flow login → thao tác → logout
+
+### Frontend
+- **Component test** (Vitest + Testing Library): form, table, dialog
+- **Adapter test**: đảm bảo mock và rest adapter **cùng pass 1 bộ test** (contract test)
+- **E2E** (Playwright): 3 role flows
+
+### Contract test (quan trọng cho pluggable)
+```ts
+// tests/adapters/contract.test.ts
+describe.each([
+  ['mock', new MockStudentRepository()],
+  ['rest', new RestStudentRepository()],
+])('IStudentRepository contract: %s', (name, repo) => {
+  it('findById trả về SinhVien đúng shape', async () => {
+    const sv = await repo.findById('SV001');
+    expect(SinhVienSchema.safeParse(sv).success).toBe(true);
+  });
+  // ... tests khác cùng áp cho mọi adapter
+});
+```
+→ Đảm bảo mọi backend tương lai đều tuân thủ contract.
+
+### Coverage target: **≥ 80%**
+
+### Test Runner UI (trong Dev Console)
+- Nút "Run All Tests" → gọi BE `/dev/run-tests`
+- Hiển thị kết quả: pass/fail/skipped
+- Log output realtime qua SSE
+
+---
+
+## 🎨 UI REQUIREMENTS
+
+### Design
+- Gradient chủ đạo `from-indigo-600 to-purple-600`, accent vàng
+- Font: `Inter` UI, `Lexend` heading
+- Dark mode toggle + lưu localStorage
+- Mobile-first responsive
+- Framer Motion micro-interactions
+- Skeleton loading + sonner toast
+- 3 landing page riêng: student (illustration sinh viên), teacher (giảng đường), dev (terminal dark)
+
+### Layout sau login
+- Sidebar collapsible + icon + tooltip
+- Topbar: search global, notification, profile, **backend switcher** (cho dev)
+- Breadcrumb động
+- Dashboard theo role với widget + chart
+
+### Components
+- DataTable: sort/filter/pagination/export CSV
+- Modal form: RHF + Zod
+- Charts (Recharts): line GPA theo kỳ, pie phân bố điểm, bar sĩ số
+- Calendar sự kiện
+- Timeline đồ án/NCKH
+- ER diagram (react-flow) trong Dev Console
+
+---
+
+## 🚀 LỘ TRÌNH (SPRINT)
+
+### Sprint 1 — Foundation
+- `todo_list` plan
+- Đọc schema (parallel)
+- Setup monorepo (backend + frontend + packages/shared)
+- Zod schemas dùng chung
+- Contract interfaces (`IStudentRepository`...)
+
+### Sprint 2 — Mock Adapter + UI
+- MockDatabase + MockRepositories với faker
+- Frontend scaffold + routing + auth (mock)
+- Student/Teacher/Dev portal skeleton
+- **Chạy được FE offline không cần BE** ✅
+
+### Sprint 3 — Real Backend (REST Adapter)
+- Express + Sequelize models 26 bảng
+- Routes + controllers theo role
+- JWT auth + bcrypt
+- REST adapter implement cùng contract
+- Contract test pass cho cả mock & rest
+
+### Sprint 4 — Dev Console
+- CRUD generic 26 bảng
+- API playground
+- Reset/Reseed button
+- Impersonate
+- ER diagram
+- Test Runner UI
+- Backend Switcher
+
+### Sprint 5 — Student & Teacher Portal
+- Student: bảng điểm, đăng ký lớp (check tiên quyết), HB/NCKH/SK
+- Teacher: nhập điểm, QL đồ án
+
+### Sprint 6 — Polish & Test
+- Dark mode, animations, responsive
+- Dashboard charts
+- Export PDF/Excel
+- **Contract test coverage ≥ 80%**
+- E2E Playwright 3 role flows
+- README + architecture diagram
+
+---
+
+## ✅ DEFINITION OF DONE
+- `npm run dev` ở cả BE + FE không lỗi
+- **`VITE_BACKEND_MODE=mock` chạy FE standalone không cần BE**
+- **`VITE_BACKEND_MODE=rest` chạy full-stack**
+- Đăng nhập 3 role từ seed data OK
+- Dev Console CRUD 26 bảng + đổi backend runtime OK
+- Student đăng ký lớp có check tiên quyết
+- Teacher nhập điểm → GPA auto cập nhật
+- Tất cả test pass, coverage ≥ 80%
+- UI responsive + dark mode OK
+- README + architecture docs đầy đủ
+- **Thêm adapter mới (VD Supabase) chỉ cần tạo 1 folder + đăng ký factory, KHÔNG sửa component**
+
+---
+
+## 🎬 BẮT ĐẦU NGAY
+
+1. `todo_list` Sprint 1
+2. `read_file` song song: migration + seeders + config.json
+3. Báo cáo schema đã phân tích
+4. Scaffold monorepo với 3 package: `backend`, `frontend`, `shared`
+5. Định nghĩa Zod schemas + contracts interface TRƯỚC khi code bất kỳ adapter nào
+
+Trao đổi tiếng Việt, code tiếng Anh.

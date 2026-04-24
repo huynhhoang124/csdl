@@ -1,0 +1,37 @@
+{
+  "development": {
+    "username": "sa",
+    "password": "QldhStrong!Pass1",
+    "database": "qldh",
+    "host": "localhost",
+    "port": 1433,
+    "dialect": "mssql",
+    "dialectOptions": {
+      "options": {
+        "encrypt": false,
+        "trustServerCertificate": true
+      }
+    },
+    "logging": false
+  },
+  "test": {
+    "username": "sa",
+    "password": "QldhStrong!Pass1",
+    "database": "qldh_test",
+    "host": "localhost",
+    "port": 1433,
+    "dialect": "mssql",
+    "dialectOptions": {
+      "options": {
+        "encrypt": false,
+        "trustServerCertificate": true
+      }
+    },
+    "logging": false
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "mssql",
+    "logging": false
+  }
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
@@ -129,12 +130,58 @@ function GradingDialog({
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Lỗi lưu điểm'),
   });
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        if (!wsname) throw new Error('File không có sheet');
+        const ws = wb.Sheets[wsname];
+        if (!ws) throw new Error('Sheet trống');
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        const newDrafts = { ...drafts };
+        let count = 0;
+        data.forEach((row) => {
+          const msvKey = Object.keys(row).find(k => k.toLowerCase().includes('msv') || k.toLowerCase().includes('mã sv'));
+          const diemKey = Object.keys(row).find(k => k.toLowerCase().includes('điểm') || k.toLowerCase().includes('diem'));
+          
+          if (msvKey && diemKey) {
+            const msv = String(row[msvKey]).trim();
+            const diem = Number(row[diemKey]);
+            if (!isNaN(diem) && studentMSVs.includes(msv)) {
+              newDrafts[msv] = diem;
+              count++;
+            }
+          }
+        });
+        setDrafts(newDrafts);
+        toast.success(`Đã import thành công ${count} điểm`);
+      } catch (err) {
+        toast.error('Lỗi đọc file Excel');
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
   return (
     <Dialog open={!!maLop} onClose={onClose} title={`Nhập điểm - ${maLop}`} size="xl">
       <div className="space-y-3">
-        <p className="text-sm text-slate-500">
-          Môn: <code>{maMon}</code> • {studentMSVs.length} SV đăng ký
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-500">
+            Môn: <code>{maMon}</code> • {studentMSVs.length} SV đăng ký
+          </p>
+          <label className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-slate-100 dark:hover:bg-slate-800 h-8 px-3">
+            Import Excel
+            <input type="file" accept=".xlsx,.csv" className="hidden" onChange={handleFileUpload} />
+          </label>
+        </div>
         {studentMSVs.length === 0 ? (
           <p className="text-slate-500">Chưa có sinh viên đăng ký</p>
         ) : (

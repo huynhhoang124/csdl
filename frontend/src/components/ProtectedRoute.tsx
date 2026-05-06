@@ -14,7 +14,7 @@ export function ProtectedRoute({ role, children }: Props) {
   if (!user) {
     return <Navigate to={`/login/${role}`} state={{ from: location }} replace />;
   }
-  if (user.role !== role && user.role !== 'dev') {
+  if (user.role !== role && user.role !== 'admin') {
     // Dev có quyền truy cập mọi portal; role khác thì kick về portal của mình
     return <Navigate to={`/${user.role}`} replace />;
   }

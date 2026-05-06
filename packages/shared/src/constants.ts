@@ -1,4 +1,4 @@
-export const ROLES = ['student', 'teacher', 'dev'] as const;
+export const ROLES = ['student', 'teacher', 'admin'] as const;
 export type Role = (typeof ROLES)[number];
 
 export const TRANG_THAI_SINH_VIEN = [
@@ -32,7 +32,6 @@ export const ALL_TABLES = [
   'chuyenNganh',
   'mon',
   'monDaoTao',
-  'monTienQuyet',
   'bangDiem',
   'lopHanhChinh',
   'lopTinChi',

@@ -15,7 +15,21 @@ export function TeacherDashboard() {
     enabled: !!MCB,
   });
 
+  const { data: thesisData } = useQuery({
+    queryKey: ['teacher-thesis', MCB],
+    queryFn: async () => (await repositories.generic.rest('/teachers/' + MCB + '/thesis')),
+    enabled: !!MCB,
+  });
+
+  const { data: researchData } = useQuery({
+    queryKey: ['teacher-research', MCB],
+    queryFn: async () => (await repositories.generic.rest('/teachers/' + MCB + '/research')),
+    enabled: !!MCB,
+  });
+
   const totalStudents = classes.reduce((s, c) => s + (c.soLuongSinhVien ?? 0), 0);
+  const totalThesis = (thesisData as any)?.total ?? 0;
+  const totalResearch = (researchData as any)?.total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -27,8 +41,8 @@ export function TeacherDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard icon={<BookOpen />} label="Lớp tín chỉ" value={classes.length} gradient="from-emerald-500 to-teal-500" />
         <StatCard icon={<Users />} label="Tổng sinh viên" value={totalStudents} gradient="from-cyan-500 to-blue-500" />
-        <StatCard icon={<FileText />} label="Đồ án hướng dẫn" value={0} gradient="from-indigo-500 to-purple-500" />
-        <StatCard icon={<FlaskConical />} label="Đề tài NCKH" value={0} gradient="from-amber-500 to-orange-500" />
+        <StatCard icon={<FileText />} label="Đồ án hướng dẫn" value={totalThesis} gradient="from-indigo-500 to-purple-500" />
+        <StatCard icon={<FlaskConical />} label="Đề tài NCKH" value={totalResearch} gradient="from-amber-500 to-orange-500" />
       </div>
 
       <Card>

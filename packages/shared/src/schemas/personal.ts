@@ -4,8 +4,10 @@ import { TRANG_THAI_SINH_VIEN, TRANG_THAI_CAN_BO } from '../constants.js';
 
 export const TtcnSchema = z.object({
   CCCD: IdString,
-  lastName: ShortText,
-  name: ShortText,
+  Ho: ShortText,
+  Ten: ShortText,
+  vaiTro: ShortText,
+  matKhau: ShortText,
   ngaySinh: DateOnly,
   gioiTinh: ShortText,
   soDienThoai: ShortText,
@@ -22,6 +24,7 @@ export type Ttcn = z.infer<typeof TtcnSchema>;
 export const SinhVienSchema = z.object({
   MSV: IdString,
   CCCD: IdString,
+  maKhoa: IdString,
   trangThai: z.enum(TRANG_THAI_SINH_VIEN).optional().nullable(),
   namHoc: z.number().int().min(1900).max(2100).optional().nullable(),
   khoaDaoTao: ShortText,

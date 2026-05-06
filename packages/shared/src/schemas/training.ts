@@ -16,7 +16,6 @@ export const ChuyenNganhSchema = z.object({
   maBac: IdString,
   tenChuyenNganh: ShortText,
   soTinChi: z.number().int().positive().optional().nullable(),
-  bangCap: ShortText,
   dieuKien: LongText,
 });
 export type ChuyenNganh = z.infer<typeof ChuyenNganhSchema>;

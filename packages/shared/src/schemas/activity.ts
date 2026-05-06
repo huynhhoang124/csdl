@@ -36,8 +36,10 @@ export type NghienCuu = z.infer<typeof NghienCuuSchema>;
 export const SinhVien_NghienCuuSchema = z.object({
   MSV: IdString,
   maDeTai: IdString,
-  vaiTro: ShortText,
+  MCB: IdString,
   ngayThamGia: DateOnly,
+  trangThai: ShortText,
+  moTa: LongText,
 });
 export type SinhVien_NghienCuu = z.infer<typeof SinhVien_NghienCuuSchema>;
 
@@ -50,14 +52,15 @@ export const DoAnTNSchema = z.object({
   ngayBaoVe: DateOnly,
   bacDoAn: ShortText,
   moTa: LongText,
-  dinhKem: ShortText,
+  dinhKem: LongText,
 });
 export type DoAnTN = z.infer<typeof DoAnTNSchema>;
 
 export const SinhVien_DoAnTNSchema = z.object({
   MSV: IdString,
   maDoAn: IdString,
-  vaiTro: ShortText,
+  ngayDangKy: DateOnly,
+  trangThai: ShortText,
 });
 export type SinhVien_DoAnTN = z.infer<typeof SinhVien_DoAnTNSchema>;
 
@@ -83,8 +86,9 @@ export type DuHoc = z.infer<typeof DuHocSchema>;
 export const SinhVien_DuHocSchema = z.object({
   MSV: IdString,
   maSuat: IdString,
-  trangThai: ShortText,
   ngayDangKy: DateOnly,
+  phanTram: z.number().min(0).max(100).optional().nullable(),
+  trangThai: ShortText,
 });
 export type SinhVien_DuHoc = z.infer<typeof SinhVien_DuHocSchema>;
 

@@ -6,7 +6,7 @@
 import { faker } from '@faker-js/faker/locale/vi';
 import type {
   Ttcn, SinhVien, CanBo, Khoa, HeDaoTao, Bac,
-  ChuongTrinhDaoTao, ChuyenNganh, Mon, MonDaoTao, MonTienQuyet,
+  ChuongTrinhDaoTao, ChuyenNganh, Mon, MonDaoTao,
   BangDiem, LopHanhChinh, LopTinChi,
   SinhVien_LopHanhChinh, SinhVien_LopTinChi,
   HocBong, SinhVien_HocBong,
@@ -38,7 +38,6 @@ export interface MockDB {
   chuyenNganh: ChuyenNganh[];
   mon: Mon[];
   monDaoTao: MonDaoTao[];
-  monTienQuyet: MonTienQuyet[];
   bangDiem: BangDiem[];
   lopHanhChinh: LopHanhChinh[];
   lopTinChi: LopTinChi[];
@@ -78,8 +77,10 @@ function buildDB(): MockDB {
   // 1. TTCN — 200 hồ sơ
   const ttcn: Ttcn[] = Array.from({ length: 200 }, (_, i) => ({
     CCCD: genCCCD(i),
-    lastName: faker.person.lastName(),
-    name: faker.person.firstName(),
+    Ho: faker.person.lastName(),
+    Ten: faker.person.firstName(),
+    vaiTro: i < 30 ? (i < 5 ? 'Truong khoa' : 'Giang vien') : 'Sinh vien',
+    matKhau: null,
     ngaySinh: dateISO(faker.date.between({ from: '1970-01-01', to: '2007-12-31' })),
     gioiTinh: faker.helpers.arrayElement(['Nam', 'Nu']),
     soDienThoai: `09${faker.string.numeric(8)}`,
@@ -100,23 +101,7 @@ function buildDB(): MockDB {
     trangThai: 'Dang cong tac',
   }));
 
-  // 3. Sinh viên — 150 (dùng ttcn 50..199)
-  const sinhVien: SinhVien[] = Array.from({ length: 150 }, (_, i) => {
-    const gpa = Math.min(4, Math.max(1.5, faker.number.float({ min: 2, max: 3.9, fractionDigits: 2 })));
-    return {
-      MSV: genMSV(i),
-      CCCD: ttcn[50 + i]!.CCCD,
-      trangThai: faker.helpers.arrayElement(['Dang hoc', 'Dang hoc', 'Dang hoc', 'Bao luu']),
-      namHoc: faker.helpers.arrayElement([2022, 2023, 2024, 2025, 2026]),
-      khoaDaoTao: faker.helpers.arrayElement(['K62', 'K63', 'K64', 'K65', 'K66']),
-      tenNganHang: faker.helpers.arrayElement(['VCB', 'BIDV', 'Techcombank', 'MB Bank', 'VPBank']),
-      soTaiKhoan: `19${faker.string.numeric(10)}`,
-      GPA: gpa,
-      CPA: +(gpa - faker.number.float({ min: 0, max: 0.3, fractionDigits: 2 })).toFixed(2),
-    };
-  });
-
-  // 4. Khoa — 5
+  // 3. Khoa — 5
   const Khoa: Khoa[] = KHOA_LIST.map((k, i) => ({
     maKhoa: k.code,
     MCB: canBo[i]!.MCB,
@@ -126,6 +111,23 @@ function buildDB(): MockDB {
     moTa: `Khoa ${k.name}`,
     ngayThanhLap: dateISO(faker.date.past({ years: 25 })),
   }));
+
+  // 4. Sinh viên — 150 (dùng ttcn 50..199)
+  const sinhVien: SinhVien[] = Array.from({ length: 150 }, (_, i) => {
+    const gpa = Math.min(4, Math.max(1.5, faker.number.float({ min: 2, max: 3.9, fractionDigits: 2 })));
+    return {
+      MSV: genMSV(i),
+      CCCD: ttcn[50 + i]!.CCCD,
+      maKhoa: KHOA_LIST[i % KHOA_LIST.length]!.code,
+      trangThai: faker.helpers.arrayElement(['Dang hoc', 'Dang hoc', 'Dang hoc', 'Bao luu']),
+      namHoc: faker.helpers.arrayElement([2022, 2023, 2024, 2025, 2026]),
+      khoaDaoTao: faker.helpers.arrayElement(['K62', 'K63', 'K64', 'K65', 'K66']),
+      tenNganHang: faker.helpers.arrayElement(['VCB', 'BIDV', 'Techcombank', 'MB Bank', 'VPBank']),
+      soTaiKhoan: `19${faker.string.numeric(10)}`,
+      GPA: gpa,
+      CPA: +(gpa - faker.number.float({ min: 0, max: 0.3, fractionDigits: 2 })).toFixed(2),
+    };
+  });
 
   // 5. Hệ đào tạo
   const heDaoTao: HeDaoTao[] = [
@@ -165,7 +167,6 @@ function buildDB(): MockDB {
       maBac: 'DH',
       tenChuyenNganh: name,
       soTinChi: 130,
-      bangCap: 'Cu nhan',
       dieuKien: 'GPA >= 2.0',
     }))
   );
@@ -202,23 +203,7 @@ function buildDB(): MockDB {
     });
   });
 
-  // 10. monTienQuyet — 50 chuỗi
-  const monTienQuyet: MonTienQuyet[] = [];
-  for (let i = 0; i < Math.min(50, monDaoTao.length - 1); i++) {
-    const current = monDaoTao[i + 1]!;
-    const prev = monDaoTao[i]!;
-    if (prev.maChuyenNganh === current.maChuyenNganh) {
-      monTienQuyet.push({
-        maCT: current.maCT,
-        maMon: current.maMon,
-        maChuyenNganh: current.maChuyenNganh,
-        maTienQuyet: prev.maMon,
-        moTa: `Hoan thanh ${prev.maMon} truoc`,
-      });
-    }
-  }
-
-  // 11. bangDiem — 10-20 môn mỗi SV
+  // 10. bangDiem — 10-20 môn mỗi SV
   const bangDiem: BangDiem[] = [];
   sinhVien.forEach((sv) => {
     const n = faker.number.int({ min: 10, max: 20 });
@@ -229,7 +214,7 @@ function buildDB(): MockDB {
     });
   });
 
-  // 12. Lớp hành chính — 15
+  // 11. Lớp hành chính — 15
   const lopHanhChinh: LopHanhChinh[] = chuyenNganh.map((cn, i) => ({
     maLop: `K${63 + (i % 4)}${cn.maChuyenNganh}`,
     maHe: 'CQ',
@@ -240,7 +225,7 @@ function buildDB(): MockDB {
     moTa: `Lop ${cn.tenChuyenNganh}`,
   }));
 
-  // 13. Lớp tín chỉ — 40 (qua 3 kỳ)
+  // 12. Lớp tín chỉ — 40 (qua 3 kỳ)
   const lopTinChi: LopTinChi[] = [];
   [20261, 20262, 20263].forEach((ky, kyIdx) => {
     for (let i = 0; i < 14; i++) {
@@ -257,13 +242,14 @@ function buildDB(): MockDB {
     }
   });
 
-  // 14. sinhVien_LopHanhChinh — mỗi SV 1 lớp
+  // 13. sinhVien_LopHanhChinh — mỗi SV 1 lớp
   const sinhVien_LopHanhChinh: SinhVien_LopHanhChinh[] = sinhVien.map((sv, i) => ({
     MSV: sv.MSV,
     maLop: lopHanhChinh[i % lopHanhChinh.length]!.maLop,
+    ngayDangKy: dateISO(new Date(2023, 8, 1)),
   }));
 
-  // 15. sinhVien_LopTinChi — 4-5 lớp/SV/kỳ
+  // 14. sinhVien_LopTinChi — 4-5 lớp/SV/kỳ
   const sinhVien_LopTinChi: SinhVien_LopTinChi[] = [];
   sinhVien.forEach((sv) => {
     const picks = faker.helpers.arrayElements(lopTinChi, faker.number.int({ min: 4, max: 6 }));
@@ -272,7 +258,7 @@ function buildDB(): MockDB {
     });
   });
 
-  // 16. Học bổng — 10
+  // 15. Học bổng — 10
   const hocBong: HocBong[] = Array.from({ length: 10 }, (_, i) => ({
     maHocBong: `HB${String(i + 1).padStart(3, '0')}`,
     tenHocBong: faker.helpers.arrayElement([
@@ -286,7 +272,7 @@ function buildDB(): MockDB {
     donViCungCap: 'Truong / Doanh nghiep',
   }));
 
-  // 17. sinhVien_HocBong — top 40 GPA nhận
+  // 16. sinhVien_HocBong — top 40 GPA nhận
   const topSV = [...sinhVien].sort((a, b) => (b.GPA ?? 0) - (a.GPA ?? 0)).slice(0, 40);
   const sinhVien_HocBong: SinhVien_HocBong[] = topSV.map((sv, i) => ({
     MSV: sv.MSV,
@@ -295,7 +281,7 @@ function buildDB(): MockDB {
     phanTram: faker.helpers.arrayElement([50, 75, 100]),
   }));
 
-  // 18. Nghiên cứu — 15
+  // 17. Nghiên cứu — 15
   const nghienCuu: NghienCuu[] = Array.from({ length: 15 }, (_, i) => ({
     maDeTai: `DT${String(i + 1).padStart(3, '0')}`,
     tenDeTai: `De tai nghien cuu ${i + 1}`,
@@ -310,15 +296,18 @@ function buildDB(): MockDB {
 
   const sinhVien_NghienCuu: SinhVien_NghienCuu[] = nghienCuu.flatMap((nc, i) => {
     const members = faker.helpers.arrayElements(sinhVien, faker.number.int({ min: 1, max: 3 }));
-    return members.map((sv, j) => ({
+    const mentor = canBo[5 + (i % 20)]!;
+    return members.map((sv) => ({
       MSV: sv.MSV,
       maDeTai: nc.maDeTai,
-      vaiTro: j === 0 ? 'Chu nhiem' : 'Thanh vien',
+      MCB: mentor.MCB,
       ngayThamGia: dateISO(new Date(2026, 0, 15)),
+      trangThai: 'Dang tham gia',
+      moTa: null,
     }));
   });
 
-  // 19. Đồ án TN — 20
+  // 18. Đồ án TN — 20
   const doAnTN: DoAnTN[] = Array.from({ length: 20 }, (_, i) => ({
     maDoAn: `DATN${String(i + 1).padStart(3, '0')}`,
     tenDoAn: `Do an tot nghiep ${i + 1}`,
@@ -334,10 +323,11 @@ function buildDB(): MockDB {
   const sinhVien_DoAnTN: SinhVien_DoAnTN[] = doAnTN.map((da, i) => ({
     MSV: sinhVien[i % sinhVien.length]!.MSV,
     maDoAn: da.maDoAn,
-    vaiTro: 'Tac gia',
+    ngayDangKy: dateISO(new Date(2026, 1, 15)),
+    trangThai: 'Dang thuc hien',
   }));
 
-  // 20. Du học — 8
+  // 19. Du học — 8
   const duHoc: DuHoc[] = Array.from({ length: 8 }, (_, i) => ({
     maSuat: `DH${String(i + 1).padStart(3, '0')}`,
     tenChuongTrinh: `Du hoc ${faker.helpers.arrayElement(['Han Quoc','Nhat Ban','My','Duc','Uc'])} ${i + 1}`,
@@ -356,16 +346,17 @@ function buildDB(): MockDB {
     moTa: 'Chuong trinh du hoc',
   }));
 
-  const sinhVien_DuHoc: SinhVien_DuHoc[] = duHoc.flatMap((d, i) =>
+  const sinhVien_DuHoc: SinhVien_DuHoc[] = duHoc.flatMap((d) =>
     faker.helpers.arrayElements(sinhVien, 2).map((sv) => ({
       MSV: sv.MSV,
       maSuat: d.maSuat,
-      trangThai: faker.helpers.arrayElement(['Cho duyet', 'Duoc duyet', 'Tu choi']),
       ngayDangKy: dateISO(faker.date.recent({ days: 90 })),
+      phanTram: faker.helpers.arrayElement([50, 75, 100]),
+      trangThai: faker.helpers.arrayElement(['Cho duyet', 'Duoc duyet', 'Tu choi']),
     }))
   );
 
-  // 21. Sự kiện — 25
+  // 20. Sự kiện — 25
   const suKien: SuKien[] = Array.from({ length: 25 }, (_, i) => ({
     maSuKien: `SK${String(i + 1).padStart(3, '0')}`,
     tenSuKien: faker.helpers.arrayElement([
@@ -393,7 +384,7 @@ function buildDB(): MockDB {
 
   return {
     ttcn, sinhVien, canBo, Khoa, heDaoTao, bac,
-    chuongTrinhDaoTao, chuyenNganh, mon, monDaoTao, monTienQuyet,
+    chuongTrinhDaoTao, chuyenNganh, mon, monDaoTao,
     bangDiem, lopHanhChinh, lopTinChi,
     sinhVien_LopHanhChinh, sinhVien_LopTinChi,
     hocBong, sinhVien_HocBong,

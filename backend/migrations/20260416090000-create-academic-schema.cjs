@@ -19,6 +19,7 @@ const buildTextColumn = (Sequelize, extra = {}) => ({
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.sequelize.transaction(async (transaction) => {
+      // 1. ttcn
       await queryInterface.createTable(
         'ttcn',
         {
@@ -45,34 +46,11 @@ module.exports = {
         { transaction }
       );
 
-      await queryInterface.createTable(
-        'canBo',
-        {
-          MCB: buildIdColumn(Sequelize, { primaryKey: true }),
-          CCCD: {
-            ...buildIdColumn(Sequelize),
-            references: {
-              model: 'ttcn',
-              key: 'CCCD',
-            },
-          },
-          viTriCongViec: buildStringColumn(Sequelize),
-          trangThai: buildStringColumn(Sequelize),
-        },
-        { transaction }
-      );
-
+      // 2. Khoa (Removed MCB)
       await queryInterface.createTable(
         'Khoa',
         {
           maKhoa: buildIdColumn(Sequelize, { primaryKey: true }),
-          MCB: {
-            ...buildIdColumn(Sequelize),
-            references: {
-              model: 'canBo',
-              key: 'MCB',
-            },
-          },
           vanPhongKhoa: buildStringColumn(Sequelize),
           dienThoaiLienHe: buildStringColumn(Sequelize),
           emailLienHe: buildStringColumn(Sequelize),
@@ -84,6 +62,32 @@ module.exports = {
         { transaction }
       );
 
+      // 3. canBo (Added maKhoa)
+      await queryInterface.createTable(
+        'canBo',
+        {
+          MCB: buildIdColumn(Sequelize, { primaryKey: true }),
+          CCCD: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'ttcn',
+              key: 'CCCD',
+            },
+          },
+          maKhoa: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'Khoa',
+              key: 'maKhoa',
+            },
+          },
+          viTriCongViec: buildStringColumn(Sequelize),
+          trangThai: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
+
+      // 4. sinhVien
       await queryInterface.createTable(
         'sinhVien',
         {
@@ -95,7 +99,13 @@ module.exports = {
               key: 'CCCD',
             },
           },
-          maKhoa: buildIdColumn(Sequelize),
+          maKhoa: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'Khoa',
+              key: 'maKhoa',
+            },
+          },
           trangThai: buildStringColumn(Sequelize),
           namHoc: {
             type: Sequelize.INTEGER,
@@ -112,17 +122,6 @@ module.exports = {
         },
         { transaction }
       );
-
-      await queryInterface.addConstraint('sinhVien', {
-        fields: ['maKhoa'],
-        type: 'foreign key',
-        name: 'fk_sinhVien_Khoa',
-        references: {
-          table: 'Khoa',
-          field: 'maKhoa',
-        },
-        transaction,
-      });
 
       await queryInterface.createTable(
         'heDaoTao',
@@ -159,6 +158,7 @@ module.exports = {
         { transaction }
       );
 
+      // 5. chuyenNganh (Added bangCap)
       await queryInterface.createTable(
         'chuyenNganh',
         {
@@ -188,6 +188,7 @@ module.exports = {
           soTinChi: {
             type: Sequelize.INTEGER,
           },
+          bangCap: buildStringColumn(Sequelize),
           dieuKien: buildTextColumn(Sequelize),
         },
         { transaction }
@@ -223,7 +224,6 @@ module.exports = {
               key: 'maCT',
             },
           },
-          // MSSQL requires the referenced composite key order to match exactly.
           maMon: {
             ...buildIdColumn(Sequelize, {
               primaryKey: true,
@@ -678,8 +678,8 @@ module.exports = {
       await queryInterface.dropTable('bac', { transaction });
       await queryInterface.dropTable('heDaoTao', { transaction });
       await queryInterface.dropTable('sinhVien', { transaction });
-      await queryInterface.dropTable('Khoa', { transaction });
       await queryInterface.dropTable('canBo', { transaction });
+      await queryInterface.dropTable('Khoa', { transaction });
       await queryInterface.dropTable('ttcn', { transaction });
     });
   },

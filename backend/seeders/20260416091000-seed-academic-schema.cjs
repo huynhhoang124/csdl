@@ -17,14 +17,14 @@ module.exports = {
         { CCCD: '001001001005', Ho: 'Vo', Ten: 'Admin', vaiTro: 'Admin', matKhau: adminHash, ngaySinh: '1980-01-01', gioiTinh: 'Nam', soDienThoai: '0901000005', ngayCapCCCD: '2020-01-01', diaChiThuongTru: 'Ha Noi', diaChiTamTru: 'Ha Noi', quocTich: 'Viet Nam', danToc: 'Kinh', congGiao: 'Khong', baoHiem: 'BHYT005' },
       ], { transaction: t });
 
-      await queryInterface.bulkInsert('canBo', [
-        { MCB: 'CB001', CCCD: '001001001003', viTriCongViec: 'Truong khoa', trangThai: 'Dang cong tac' },
-        { MCB: 'CB002', CCCD: '001001001004', viTriCongViec: 'Giang vien', trangThai: 'Dang cong tac' },
-        { MCB: 'ADMIN01', CCCD: '001001001005', viTriCongViec: 'Admin', trangThai: 'Dang cong tac' },
+      await queryInterface.bulkInsert('Khoa', [
+        { maKhoa: 'CNTT', vanPhongKhoa: 'Tang 3 toa A1', dienThoaiLienHe: '02473001234', emailLienHe: 'cntt@university.edu.vn', moTa: 'Khoa CNTT', ngayThanhLap: '2000-09-01' },
       ], { transaction: t });
 
-      await queryInterface.bulkInsert('Khoa', [
-        { maKhoa: 'CNTT', MCB: 'CB001', vanPhongKhoa: 'Tang 3 toa A1', dienThoaiLienHe: '02473001234', emailLienHe: 'cntt@university.edu.vn', moTa: 'Khoa CNTT', ngayThanhLap: '2000-09-01' },
+      await queryInterface.bulkInsert('canBo', [
+        { MCB: 'CB001', CCCD: '001001001003', maKhoa: 'CNTT', viTriCongViec: 'Truong khoa', trangThai: 'Dang cong tac' },
+        { MCB: 'CB002', CCCD: '001001001004', maKhoa: 'CNTT', viTriCongViec: 'Giang vien', trangThai: 'Dang cong tac' },
+        { MCB: 'ADMIN01', CCCD: '001001001005', maKhoa: 'CNTT', viTriCongViec: 'Admin', trangThai: 'Dang cong tac' },
       ], { transaction: t });
 
       await queryInterface.bulkInsert('sinhVien', [
@@ -45,7 +45,7 @@ module.exports = {
       ], { transaction: t });
 
       await queryInterface.bulkInsert('chuyenNganh', [
-        { maChuyenNganh: 'CNPM', maKhoa: 'CNTT', maHe: 'CQ', maBac: 'DH', tenChuyenNganh: 'Cong nghe phan mem', soTinChi: 130, dieuKien: 'GPA >= 2.0' },
+        { maChuyenNganh: 'CNPM', maKhoa: 'CNTT', maHe: 'CQ', maBac: 'DH', tenChuyenNganh: 'Cong nghe phan mem', soTinChi: 130, bangCap: 'Cu nhan', dieuKien: 'GPA >= 2.0' },
       ], { transaction: t });
 
       await queryInterface.bulkInsert('mon', [
@@ -64,8 +64,8 @@ module.exports = {
       ], { transaction: t });
 
       await queryInterface.bulkInsert('lopTinChi', [
-        { maLop: 'LTC001', MCB: 'CB002', maMon: 'IT101', kyDaoTao: 20261, soLuongSinhVienMax: 60, soLuongSinhVien: 0, trangThai: 'Dang mo' },
-        { maLop: 'LTC002', MCB: 'CB002', maMon: 'IT201', kyDaoTao: 20261, soLuongSinhVienMax: 40, soLuongSinhVien: 0, trangThai: 'Dang mo' },
+        { maLop: 'LTC001', MCB: 'CB002', maMon: 'IT101', kyDaoTao: '20261', soLuongSinhVienMax: 60, soLuongSinhVien: 0, trangThai: 'Dang mo' },
+        { maLop: 'LTC002', MCB: 'CB002', maMon: 'IT201', kyDaoTao: '20261', soLuongSinhVienMax: 40, soLuongSinhVien: 0, trangThai: 'Dang mo' },
       ], { transaction: t });
 
       await queryInterface.bulkInsert('hocBong', [
@@ -140,8 +140,8 @@ module.exports = {
       await queryInterface.bulkDelete('bac', { maBac: 'DH' }, { transaction: t });
       await queryInterface.bulkDelete('heDaoTao', { maHe: 'CQ' }, { transaction: t });
       await queryInterface.bulkDelete('sinhVien', { MSV: { [Op.in]: ['SV001', 'SV002'] } }, { transaction: t });
-      await queryInterface.bulkDelete('Khoa', { maKhoa: 'CNTT' }, { transaction: t });
       await queryInterface.bulkDelete('canBo', { MCB: { [Op.in]: ['CB001', 'CB002', 'ADMIN01'] } }, { transaction: t });
+      await queryInterface.bulkDelete('Khoa', { maKhoa: 'CNTT' }, { transaction: t });
       await queryInterface.bulkDelete('ttcn', { CCCD: { [Op.in]: ['001001001001', '001001001002', '001001001003', '001001001004', '001001001005'] } }, { transaction: t });
     });
   },

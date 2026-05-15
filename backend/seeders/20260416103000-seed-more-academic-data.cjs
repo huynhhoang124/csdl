@@ -65,6 +65,7 @@ module.exports = {
       {
         MCB: 'CB003',
         CCCD: '001001001008',
+        maKhoa: 'CNTT',
         viTriCongViec: 'Giang vien',
         trangThai: 'Dang cong tac',
       },
@@ -87,7 +88,7 @@ module.exports = {
         MSV: 'SV004',
         CCCD: '001001001007',
         maKhoa: 'CNTT',
-        trangThai: 'Dang hoc',
+        trangThai: 'Dang học',
         namHoc: 2024,
         khoaDaoTao: '2024-2028',
         tenNganHang: 'MB Bank',
@@ -147,7 +148,7 @@ module.exports = {
         maLop: 'LTCIT30101',
         MCB: 'CB003',
         maMon: 'IT301',
-        kyDaoTao: 20262,
+        kyDaoTao: '20262',
         soLuongSinhVienMax: 50,
         soLuongSinhVien: 2,
         trangThai: 'Dang mo',
@@ -156,7 +157,7 @@ module.exports = {
         maLop: 'LTCIT30201',
         MCB: 'CB002',
         maMon: 'IT302',
-        kyDaoTao: 20262,
+        kyDaoTao: '20262',
         soLuongSinhVienMax: 50,
         soLuongSinhVien: 1,
         trangThai: 'Sap mo',
@@ -209,7 +210,6 @@ module.exports = {
       await queryInterface.bulkInsert('hocBong', scholarshipRows, { transaction });
       await queryInterface.bulkInsert('suKien', eventRows, { transaction });
       
-      // Additional junction data for demo
       await queryInterface.bulkInsert('sinhVien_HocBong', [
         { MSV: 'SV004', maHocBong: 'HB002', ngayNhan: '2026-03-01', phanTram: 100.0 }
       ], { transaction });

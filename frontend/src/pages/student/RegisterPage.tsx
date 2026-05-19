@@ -61,7 +61,9 @@ export function RegisterPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <p className="text-sm">Môn: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{c.maMon}</code></p>
+                <p className="text-sm font-semibold text-primary">{c.mon?.tenMon || 'N/A'}</p>
+                <p className="text-xs text-slate-500">Mã môn: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{c.maMon}</code></p>
+                <p className="text-sm">Giảng viên: <strong>{c.canBo?.ttcn ? `${c.canBo.ttcn.Ho} ${c.canBo.ttcn.Ten}` : c.MCB}</strong></p>
                 <p className="text-sm">Kỳ: <strong>{c.kyDaoTao}</strong></p>
                 <p className="text-sm">
                   Sĩ số: <span className={full ? 'text-rose-600 font-semibold' : 'text-emerald-600'}>

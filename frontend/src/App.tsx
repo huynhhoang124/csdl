@@ -10,30 +10,26 @@ import { GradesPage } from '@/pages/student/GradesPage';
 import { RegisterPage } from '@/pages/student/RegisterPage';
 import { TeacherDashboard } from '@/pages/teacher/TeacherDashboard';
 import { TeacherClassesPage } from '@/pages/teacher/ClassesPage';
+import { TeacherThesisPage } from '@/pages/teacher/ThesisPage';
+import { TeacherResearchPage } from '@/pages/teacher/ResearchPage';
 import { ScholarshipsPage } from '@/pages/student/ScholarshipsPage';
 import { ResearchPage } from '@/pages/student/ResearchPage';
 import { ThesisPage } from '@/pages/student/ThesisPage';
 import { OverseasPage } from '@/pages/student/OverseasPage';
 import { EventsPage } from '@/pages/student/EventsPage';
-import { DevDashboard } from '@/pages/dev/DevDashboard';
-import { TablesPage } from '@/pages/dev/TablesPage';
-import { ImpersonatePage } from '@/pages/dev/ImpersonatePage';
-import { PlaygroundPage } from '@/pages/dev/PlaygroundPage';
-import { ERDiagramPage } from '@/pages/dev/ERDiagramPage';
-import { TestRunnerPage } from '@/pages/dev/TestRunnerPage';
+import { AdminDashboard } from '@/pages/admin/AdminDashboard';
+import { AdminPersonalPage } from '@/pages/admin/PersonalPage';
+import { AdminStudentsPage } from '@/pages/admin/StudentsPage';
+import { AdminTeachersPage } from '@/pages/admin/TeachersPage';
+import { AdminDepartmentsPage } from '@/pages/admin/DepartmentsPage';
+import { AdminProgramsPage } from '@/pages/admin/ProgramsPage';
+import { AdminCoursesPage } from '@/pages/admin/CoursesPage';
+import { AdminClassesPage } from '@/pages/admin/ClassesPage';
+import { AdminGradesPage } from '@/pages/admin/GradesPage';
+import { AdminScholarshipsPage } from '@/pages/admin/ScholarshipsPage';
+import { AdminTrainingProgramsPage } from '@/pages/admin/TrainingProgramsPage';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
-
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="flex items-center justify-center h-[60vh]">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-display">{title}</h2>
-        <p className="text-slate-500">Đang phát triển ở Sprint tiếp theo</p>
-      </div>
-    </div>
-  );
-}
 
 export function App() {
   const hydrate = useAuthStore((s) => s.hydrate);
@@ -45,7 +41,7 @@ export function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login/student" element={<LoginPage role="student" />} />
       <Route path="/login/teacher" element={<LoginPage role="teacher" />} />
-      <Route path="/login/dev" element={<LoginPage role="dev" />} />
+      <Route path="/login/admin" element={<LoginPage role="admin" />} />
 
       <Route path="/student" element={<ProtectedRoute role="student"><AppLayout /></ProtectedRoute>}>
         <Route index element={<StudentDashboard />} />
@@ -62,17 +58,22 @@ export function App() {
         <Route index element={<TeacherDashboard />} />
         <Route path="classes" element={<TeacherClassesPage />} />
         <Route path="grades" element={<TeacherClassesPage />} />
-        <Route path="thesis" element={<ComingSoon title="Đồ án hướng dẫn" />} />
-        <Route path="research" element={<ComingSoon title="Đề tài NCKH" />} />
+        <Route path="thesis" element={<TeacherThesisPage />} />
+        <Route path="research" element={<TeacherResearchPage />} />
       </Route>
 
-      <Route path="/dev" element={<ProtectedRoute role="dev"><AppLayout /></ProtectedRoute>}>
-        <Route index element={<DevDashboard />} />
-        <Route path="tables" element={<TablesPage />} />
-        <Route path="impersonate" element={<ImpersonatePage />} />
-        <Route path="playground" element={<PlaygroundPage />} />
-        <Route path="er-diagram" element={<ERDiagramPage />} />
-        <Route path="test-runner" element={<TestRunnerPage />} />
+      <Route path="/admin" element={<ProtectedRoute role="admin"><AppLayout /></ProtectedRoute>}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="personal" element={<AdminPersonalPage />} />
+        <Route path="students" element={<AdminStudentsPage />} />
+        <Route path="teachers" element={<AdminTeachersPage />} />
+        <Route path="departments" element={<AdminDepartmentsPage />} />
+        <Route path="programs" element={<AdminProgramsPage />} />
+        <Route path="courses" element={<AdminCoursesPage />} />
+        <Route path="classes" element={<AdminClassesPage />} />
+        <Route path="grades" element={<AdminGradesPage />} />
+        <Route path="scholarships" element={<AdminScholarshipsPage />} />
+        <Route path="training-programs" element={<AdminTrainingProgramsPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

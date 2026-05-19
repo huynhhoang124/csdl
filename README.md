@@ -43,6 +43,7 @@ npm run dev
 | Role | Username | Password |
 |---|---|---|
 | Dev | `dev@qldh.local` | `dev123` |
+| Admin | `ADMIN01` | `admin123` |
 | Student | `SV001` | `student123` |
 | Teacher | `CB001` | `teacher123` |
 

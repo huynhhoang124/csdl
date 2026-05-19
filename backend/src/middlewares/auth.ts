@@ -22,7 +22,7 @@ export function authMiddleware(req: AuthedRequest, res: Response, next: NextFunc
 export function requireRole(...roles: Role[]) {
   return (req: AuthedRequest, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ message: 'Unauthenticated' });
-    if (!roles.includes(req.user.role) && req.user.role !== 'dev') {
+    if (!roles.includes(req.user.role as Role) && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden' });
     }
     next();

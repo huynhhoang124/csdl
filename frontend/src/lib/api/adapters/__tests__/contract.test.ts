@@ -11,15 +11,15 @@ import { SinhVienSchema, ALL_TABLES } from '@qldh/shared';
 describe('IAuthRepository contract — mock', () => {
   const repo = new MockAuthRepository();
 
-  it('login dev thành công', async () => {
-    const r = await repo.login({ username: 'dev@qldh.local', password: 'dev123', role: 'dev' });
-    expect(r.user.role).toBe('dev');
+  it('login admin thành công', async () => {
+    const r = await repo.login({ username: 'CB001', password: 'admin123', role: 'admin' });
+    expect(r.user.role).toBe('admin');
     expect(r.token).toMatch(/^mock\./);
   });
 
-  it('login dev sai password → error', async () => {
+  it('login admin sai password → error', async () => {
     await expect(
-      repo.login({ username: 'dev@qldh.local', password: 'wrong', role: 'dev' })
+      repo.login({ username: 'CB001', password: 'wrong', role: 'admin' })
     ).rejects.toThrow();
   });
 

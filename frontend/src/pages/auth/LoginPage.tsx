@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { GraduationCap, BookOpenCheck, Terminal, ArrowLeft } from 'lucide-react';
+import { GraduationCap, BookOpenCheck, Terminal, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 interface Props { role: Role }
 
@@ -29,13 +29,13 @@ const ROLE_META: Record<Role, { title: string; subtitle: string; icon: React.Rea
     hint: 'Mặc định: CB001 / teacher123',
     gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
   },
-  dev: {
-    title: 'Developer Console',
-    subtitle: 'Toàn quyền kiểm thử hệ thống',
-    icon: <Terminal className="size-10" />,
-    hint: 'dev@qldh.local / dev123',
-    gradient: 'from-slate-900 via-slate-800 to-zinc-900',
-  },
+  admin: {
+    title: 'Đăng nhập Quản trị',
+    subtitle: 'Phòng Đào tạo — quản lý toàn bộ hệ thống',
+    icon: <ShieldCheck className="size-10" />,
+    hint: 'Mặc định: ADMIN01 / admin123',
+    gradient: 'from-indigo-700 via-blue-700 to-purple-700',
+  }
 };
 
 export function LoginPage({ role }: Props) {
@@ -89,7 +89,7 @@ export function LoginPage({ role }: Props) {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username">
-                  {role === 'student' ? 'Mã sinh viên (MSV)' : role === 'teacher' ? 'Mã cán bộ (MCB)' : 'Email'}
+                  {role === 'student' ? 'Mã sinh viên (MSV)' : role === 'teacher' || role === 'admin' ? 'Mã cán bộ (MCB)' : 'Email'}
                 </Label>
                 <Input id="username" autoComplete="username" {...register('username')} />
                 {errors.username && <p className="text-xs text-rose-600">{errors.username.message}</p>}

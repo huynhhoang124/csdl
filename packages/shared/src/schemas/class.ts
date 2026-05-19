@@ -22,11 +22,15 @@ export const LopTinChiSchema = z.object({
   soLuongSinhVien: z.number().int().nonnegative().optional().nullable(),
   trangThai: z.enum(TRANG_THAI_LOP).optional().nullable(),
 });
-export type LopTinChi = z.infer<typeof LopTinChiSchema>;
+export type LopTinChi = z.infer<typeof LopTinChiSchema> & {
+  mon?: any;
+  canBo?: any;
+};
 
 export const SinhVien_LopHanhChinhSchema = z.object({
   MSV: IdString,
   maLop: IdString,
+  ngayDangKy: DateOnly,
 });
 export type SinhVien_LopHanhChinh = z.infer<typeof SinhVien_LopHanhChinhSchema>;
 

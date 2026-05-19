@@ -34,6 +34,12 @@ export function StudentDashboard() {
     enabled: !!MSV,
   });
 
+  const { data: gpaData } = useQuery({
+    queryKey: ['gpa', MSV],
+    queryFn: () => repositories.student.getGPA(MSV),
+    enabled: !!MSV,
+  });
+
   const avgScore = grades.length
     ? grades.reduce((s, g) => s + (g.diemSo ?? 0), 0) / grades.length
     : 0;
@@ -59,13 +65,13 @@ export function StudentDashboard() {
         <StatCard
           icon={<GraduationCap className="size-6" />}
           label="GPA hiện tại"
-          value={formatGPA(student?.GPA)}
+          value={formatGPA(gpaData?.GPA)}
           gradient="from-indigo-500 to-purple-500"
         />
         <StatCard
           icon={<TrendingUp className="size-6" />}
           label="CPA tích lũy"
-          value={formatGPA(student?.CPA)}
+          value={formatGPA(gpaData?.CPA)}
           gradient="from-purple-500 to-fuchsia-500"
         />
         <StatCard

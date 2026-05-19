@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import {
   LayoutDashboard, BookOpen, GraduationCap, Award, FlaskConical,
   FileText, Plane, Calendar, Users, Database, Settings2, LogOut, Menu, X,
-  Network, FlaskRound,
+  Network, FlaskRound, Building2, Layers, School, ClipboardList, Trophy,
+  ShieldCheck,
 } from 'lucide-react';
 import type { Role } from '@qldh/shared';
 import { useAuthStore } from '@/store/authStore';
@@ -33,14 +34,25 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { to: '/teacher/thesis', icon: <FileText className="size-5" />, label: 'Đồ án hướng dẫn' },
     { to: '/teacher/research', icon: <FlaskConical className="size-5" />, label: 'Đề tài NCKH' },
   ],
-  dev: [
-    { to: '/dev', icon: <LayoutDashboard className="size-5" />, label: 'Dashboard' },
-    { to: '/dev/tables', icon: <Database className="size-5" />, label: 'CRUD 26 bảng' },
-    { to: '/dev/playground', icon: <Settings2 className="size-5" />, label: 'API Playground' },
-    { to: '/dev/er-diagram', icon: <Network className="size-5" />, label: 'ER Diagram' },
-    { to: '/dev/test-runner', icon: <FlaskRound className="size-5" />, label: 'Test Runner' },
-    { to: '/dev/impersonate', icon: <Users className="size-5" />, label: 'Impersonate' },
-  ],
+  admin: [
+    { to: '/admin', icon: <LayoutDashboard className="size-5" />, label: 'Tổng quan' },
+    { to: '/admin/personal', icon: <Users className="size-5" />, label: 'Hồ sơ cá nhân' },
+    { to: '/admin/students', icon: <GraduationCap className="size-5" />, label: 'Sinh viên' },
+    { to: '/admin/teachers', icon: <Users className="size-5" />, label: 'Giảng viên / CB' },
+    { to: '/admin/departments', icon: <Building2 className="size-5" />, label: 'Khoa' },
+    { to: '/admin/programs', icon: <Layers className="size-5" />, label: 'Chuyên ngành' },
+    { to: '/admin/training-programs', icon: <ClipboardList className="size-5" />, label: 'CTĐT' },
+    { to: '/admin/courses', icon: <BookOpen className="size-5" />, label: 'Môn học' },
+    { to: '/admin/classes', icon: <School className="size-5" />, label: 'Lớp tín chỉ' },
+    { to: '/admin/grades', icon: <FileText className="size-5" />, label: 'Bảng điểm' },
+    { to: '/admin/scholarships', icon: <Trophy className="size-5" />, label: 'Học bổng' },
+  ]
+};
+
+const ROLE_LABELS: Record<Role, string> = {
+  student: 'Sinh viên',
+  teacher: 'Giảng viên',
+  admin: 'Quản trị viên'
 };
 
 export function AppLayout() {
@@ -51,7 +63,7 @@ export function AppLayout() {
   const [backendMode, setMode] = useState<BackendMode>(getBackendMode());
 
   if (!user) return null;
-  const nav = NAV_BY_ROLE[user.role];
+  const nav = NAV_BY_ROLE[user.role] ?? NAV_BY_ROLE.student;
 
   const handleLogout = async () => {
     await logout();
@@ -79,6 +91,14 @@ export function AppLayout() {
             {sidebarOpen && <span>QLDH</span>}
           </Link>
         </div>
+        {sidebarOpen && user.role === 'admin' && (
+          <div className="mx-3 mt-3 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-200 dark:border-indigo-800">
+            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+              <ShieldCheck className="size-4" />
+              Phòng Đào tạo
+            </div>
+          </div>
+        )}
         <nav className="p-3 space-y-1">
           {nav.map((item) => (
             <NavLink
@@ -109,28 +129,16 @@ export function AppLayout() {
           </Button>
           <div className="flex-1" />
 
-          {user.role === 'dev' && (
-            <div className="hidden md:flex items-center gap-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
-              <Database className="size-4 text-slate-400" />
-              <span className="text-slate-500">Backend:</span>
-              <select
-                value={backendMode}
-                onChange={(e) => handleBackendChange(e.target.value as BackendMode)}
-                className="bg-transparent font-medium focus:outline-none cursor-pointer"
-              >
-                <option value="mock">mock (offline)</option>
-                <option value="rest">rest (Express)</option>
-              </select>
-            </div>
-          )}
-
           <ThemeToggle />
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium">{user.displayName}</p>
-              <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+              <p className="text-xs text-slate-500">{ROLE_LABELS[user.role] ?? user.role}</p>
             </div>
-            <div className="size-10 rounded-full bg-brand-gradient text-white flex items-center justify-center font-semibold shadow">
+            <div className={cn(
+              'size-10 rounded-full text-white flex items-center justify-center font-semibold shadow',
+              user.role === 'admin' ? 'bg-gradient-to-br from-indigo-600 to-purple-600' : 'bg-brand-gradient'
+            )}>
               {user.displayName.charAt(0).toUpperCase()}
             </div>
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Đăng xuất">

@@ -8,7 +8,7 @@ import type {
   ListParams, Page,
 } from '../../contracts';
 import type {
-  SinhVien, CanBo, Mon, MonDaoTao, MonTienQuyet, BangDiem,
+  SinhVien, CanBo, Mon, MonDaoTao, BangDiem,
   LopTinChi, LopHanhChinh, SinhVien_LopTinChi,
   LoginRequest, LoginResponse, AuthUser, TableName,
 } from '@qldh/shared';
@@ -30,31 +30,33 @@ function decodeToken<T>(b64: string): T {
 }
 
 // ---------- AUTH ----------
-const DEV_USER: AuthUser = {
-  id: 'dev',
-  username: 'dev@qldh.local',
-  displayName: 'Developer',
-  role: 'dev',
-  email: 'dev@qldh.local',
-};
 
 export class MockAuthRepository implements IAuthRepository {
   async login(input: LoginRequest): Promise<LoginResponse> {
     await delay();
-    if (input.role === 'dev') {
-      if (input.username !== 'dev@qldh.local' || input.password !== 'dev123') {
-        throw new Error('Sai tai khoan dev. Dung: dev@qldh.local / dev123');
+    if (input.role === 'admin') {
+      const cb = db.canBo.find((c) => c.MCB === input.username);
+      if (!cb) throw new Error(`Khong tim thay can bo ${input.username}`);
+      if (cb.viTriCongViec !== 'Admin' && cb.viTriCongViec !== 'Truong khoa') {
+        throw new Error('Tai khoan khong co quyen Admin');
       }
-      return { token: `mock.${encodeToken(DEV_USER)}`, user: DEV_USER };
+      if (input.password !== 'admin123') throw new Error('Sai mat khau');
+      const ttcn = db.ttcn.find((t) => t.CCCD === cb.CCCD);
+      const user: AuthUser = {
+        id: cb.MCB, username: cb.MCB,
+        displayName: `${ttcn?.Ho ?? ''} ${ttcn?.Ten ?? ''}`.trim() || cb.MCB,
+        role: 'admin', MCB: cb.MCB,
+      };
+      return { token: `mock.${encodeToken(user)}`, user };
     }
     if (input.role === 'student') {
       const sv = db.sinhVien.find((s) => s.MSV === input.username);
       if (!sv) throw new Error(`Khong tim thay sinh vien ${input.username}`);
-      if (input.password !== 'student123') throw new Error('Mat khau mac dinh: student123');
+      if (input.password !== 'student123') throw new Error('Sai mat khau');
       const ttcn = db.ttcn.find((t) => t.CCCD === sv.CCCD);
       const user: AuthUser = {
         id: sv.MSV, username: sv.MSV,
-        displayName: `${ttcn?.lastName ?? ''} ${ttcn?.name ?? ''}`.trim() || sv.MSV,
+        displayName: `${ttcn?.Ho ?? ''} ${ttcn?.Ten ?? ''}`.trim() || sv.MSV,
         role: 'student', MSV: sv.MSV,
       };
       return { token: `mock.${encodeToken(user)}`, user };
@@ -62,11 +64,11 @@ export class MockAuthRepository implements IAuthRepository {
     // teacher
     const cb = db.canBo.find((c) => c.MCB === input.username);
     if (!cb) throw new Error(`Khong tim thay can bo ${input.username}`);
-    if (input.password !== 'teacher123') throw new Error('Mat khau mac dinh: teacher123');
+    if (input.password !== 'teacher123') throw new Error('Sai mat khau');
     const ttcn = db.ttcn.find((t) => t.CCCD === cb.CCCD);
     const user: AuthUser = {
       id: cb.MCB, username: cb.MCB,
-      displayName: `${ttcn?.lastName ?? ''} ${ttcn?.name ?? ''}`.trim() || cb.MCB,
+      displayName: `${ttcn?.Ho ?? ''} ${ttcn?.Ten ?? ''}`.trim() || cb.MCB,
       role: 'teacher', MCB: cb.MCB,
     };
     return { token: `mock.${encodeToken(user)}`, user };
@@ -84,7 +86,12 @@ export class MockAuthRepository implements IAuthRepository {
     const sv = db.sinhVien.find((s) => s.MSV === targetUserId);
     if (sv) return this.login({ username: sv.MSV, password: 'student123', role: 'student' });
     const cb = db.canBo.find((c) => c.MCB === targetUserId);
-    if (cb) return this.login({ username: cb.MCB, password: 'teacher123', role: 'teacher' });
+    if (cb) {
+      if (cb.viTriCongViec === 'Admin') {
+        return this.login({ username: cb.MCB, password: 'admin123', role: 'admin' });
+      }
+      return this.login({ username: cb.MCB, password: 'teacher123', role: 'teacher' });
+    }
     throw new Error(`Khong tim thay user ${targetUserId}`);
   }
 }
@@ -161,18 +168,12 @@ export class MockCourseRepository implements ICourseRepository {
   async getPrograms(maMon: string): Promise<MonDaoTao[]> {
     return db.monDaoTao.filter((m) => m.maMon === maMon);
   }
-  async getPrerequisites(maMon: string, maCT: string, maChuyenNganh: string): Promise<MonTienQuyet[]> {
-    return db.monTienQuyet.filter(
-      (m) => m.maMon === maMon && m.maCT === maCT && m.maChuyenNganh === maChuyenNganh
-    );
-  }
-  async canRegister(MSV: string, maMon: string, maCT: string, maChuyenNganh: string) {
-    const prereqs = await this.getPrerequisites(maMon, maCT, maChuyenNganh);
+  async canRegister(MSV: string, maMon: string, _maCT: string, _maChuyenNganh: string) {
+    // Without monTienQuyet, always allow registration
     const passedSet = new Set(
       db.bangDiem.filter((g) => g.MSV === MSV && (g.diemSo ?? 0) >= 5).map((g) => g.maMon)
     );
-    const missing = prereqs.map((p) => p.maTienQuyet).filter((m) => !passedSet.has(m));
-    return { ok: missing.length === 0, missing };
+    return { ok: true, missing: [] as string[] };
   }
 }
 
@@ -281,9 +282,26 @@ export class MockGenericRepository implements IGenericRepository {
     const idx = arr.findIndex((row) => Object.entries(pk).every(([k, v]) => row[k] === v));
     if (idx >= 0) arr.splice(idx, 1);
   }
+  async upsert(table: TableName, data: Record<string, unknown>) {
+    // Basic mock upsert: if we find a record with same PK, update it, else create
+    // We don't easily know PK from here, so we assume if it's there it's an update?
+    // Actually for mock it doesn't matter much for this task as they'll likely use REST.
+    const arr = (db as unknown as Record<string, Record<string, unknown>[]>)[table];
+    if (!arr) throw new Error(`Bang ${table} khong ton tai`);
+    // Try to find by CCCD/MSV/MCB if present
+    const pkVal = data.CCCD || data.MSV || data.MCB || data.maMon || data.maLop;
+    const idx = arr.findIndex((row) => (row.CCCD || row.MSV || row.MCB || row.maMon || row.maLop) === pkVal);
+    if (idx >= 0) arr[idx] = { ...arr[idx]!, ...data };
+    else arr.push(data);
+    return data;
+  }
   async resetAndReseed(): Promise<{ ok: true; durationMs: number }> {
     const t0 = performance.now();
     resetDB();
     return { ok: true, durationMs: Math.round(performance.now() - t0) };
+  }
+  async rest(path: string): Promise<any> {
+    await delay();
+    return { items: [], total: 0 };
   }
 }

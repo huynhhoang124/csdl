@@ -12,5 +12,7 @@ export interface IGenericRepository {
     data: Record<string, unknown>
   ): Promise<Record<string, unknown>>;
   delete(table: TableName, pk: Record<string, unknown>): Promise<void>;
+  upsert(table: TableName, data: Record<string, unknown>): Promise<Record<string, unknown>>;
   resetAndReseed(): Promise<{ ok: true; durationMs: number }>;
+  rest(path: string): Promise<any>;
 }

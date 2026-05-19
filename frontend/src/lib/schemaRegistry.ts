@@ -23,7 +23,6 @@ export const SCHEMA_REGISTRY: Record<TableName, TableMeta> = {
   chuyenNganh: { schema: S.ChuyenNganhSchema as any, primaryKeys: ['maChuyenNganh'] },
   mon: { schema: S.MonSchema as any, primaryKeys: ['maMon'] },
   monDaoTao: { schema: S.MonDaoTaoSchema as any, primaryKeys: ['maCT', 'maMon', 'maChuyenNganh'] },
-  monTienQuyet: { schema: S.MonTienQuyetSchema as any, primaryKeys: ['maCT', 'maMon', 'maChuyenNganh', 'maTienQuyet'] },
   bangDiem: { schema: S.BangDiemSchema as any, primaryKeys: ['maMon', 'MSV'] },
   lopHanhChinh: { schema: S.LopHanhChinhSchema as any, primaryKeys: ['maLop'] },
   lopTinChi: { schema: S.LopTinChiSchema as any, primaryKeys: ['maLop'] },

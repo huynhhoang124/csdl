@@ -1,285 +1,686 @@
 'use strict';
 
-const id = (S, extra = {}) => ({ type: S.STRING(50), allowNull: false, ...extra });
-const str = (S, extra = {}) => ({ type: S.STRING(255), ...extra });
-const txt = (S, extra = {}) => ({ type: S.TEXT, ...extra });
-const ref = (model, key) => ({ references: { model, key } });
+const buildIdColumn = (Sequelize, extra = {}) => ({
+  type: Sequelize.STRING(50),
+  allowNull: false,
+  ...extra,
+});
 
-/** @type {import('sequelize-cli').Migration} */
+const buildStringColumn = (Sequelize, extra = {}) => ({
+  type: Sequelize.STRING(255),
+  ...extra,
+});
+
+const buildTextColumn = (Sequelize, extra = {}) => ({
+  type: Sequelize.TEXT,
+  ...extra,
+});
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const S = Sequelize;
-    await queryInterface.sequelize.transaction(async (t) => {
-      await queryInterface.createTable('ttcn', {
-        CCCD: id(S, { primaryKey: true }),
-        lastName: str(S),
-        name: str(S),
-        ngaySinh: { type: S.DATEONLY },
-        gioiTinh: str(S),
-        soDienThoai: str(S),
-        ngayCapCCCD: { type: S.DATEONLY },
-        diaChiThuongTru: txt(S),
-        diaChiTamTru: txt(S),
-        quocTich: str(S),
-        danToc: str(S),
-        congGiao: str(S),
-        baoHiem: str(S),
-      }, { transaction: t });
+    await queryInterface.sequelize.transaction(async (transaction) => {
+      // 1. ttcn
+      await queryInterface.createTable(
+        'ttcn',
+        {
+          CCCD: buildIdColumn(Sequelize, { primaryKey: true }),
+          Ho: buildStringColumn(Sequelize),
+          Ten: buildStringColumn(Sequelize),
+          vaiTro: buildStringColumn(Sequelize),
+          matKhau: buildStringColumn(Sequelize),
+          ngaySinh: {
+            type: Sequelize.DATEONLY,
+          },
+          gioiTinh: buildStringColumn(Sequelize),
+          soDienThoai: buildStringColumn(Sequelize),
+          ngayCapCCCD: {
+            type: Sequelize.DATEONLY,
+          },
+          diaChiThuongTru: buildTextColumn(Sequelize),
+          diaChiTamTru: buildTextColumn(Sequelize),
+          quocTich: buildStringColumn(Sequelize),
+          danToc: buildStringColumn(Sequelize),
+          congGiao: buildStringColumn(Sequelize),
+          baoHiem: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('sinhVien', {
-        MSV: id(S, { primaryKey: true }),
-        CCCD: { ...id(S), ...ref('ttcn', 'CCCD') },
-        trangThai: str(S),
-        namHoc: { type: S.INTEGER },
-        khoaDaoTao: str(S),
-        tenNganHang: str(S),
-        soTaiKhoan: str(S),
-        GPA: { type: S.FLOAT },
-        CPA: { type: S.FLOAT },
-      }, { transaction: t });
+      // 2. Khoa (Removed MCB)
+      await queryInterface.createTable(
+        'Khoa',
+        {
+          maKhoa: buildIdColumn(Sequelize, { primaryKey: true }),
+          vanPhongKhoa: buildStringColumn(Sequelize),
+          dienThoaiLienHe: buildStringColumn(Sequelize),
+          emailLienHe: buildStringColumn(Sequelize),
+          moTa: buildTextColumn(Sequelize),
+          ngayThanhLap: {
+            type: Sequelize.DATEONLY,
+          },
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('canBo', {
-        MCB: id(S, { primaryKey: true }),
-        CCCD: { ...id(S), ...ref('ttcn', 'CCCD') },
-        viTriCongViec: str(S),
-        trangThai: str(S),
-      }, { transaction: t });
+      // 3. canBo (Added maKhoa)
+      await queryInterface.createTable(
+        'canBo',
+        {
+          MCB: buildIdColumn(Sequelize, { primaryKey: true }),
+          CCCD: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'ttcn',
+              key: 'CCCD',
+            },
+          },
+          maKhoa: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'Khoa',
+              key: 'maKhoa',
+            },
+          },
+          viTriCongViec: buildStringColumn(Sequelize),
+          trangThai: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('Khoa', {
-        maKhoa: id(S, { primaryKey: true }),
-        MCB: { ...id(S), ...ref('canBo', 'MCB') },
-        vanPhongKhoa: str(S),
-        dienThoaiLienHe: str(S),
-        emailLienHe: str(S),
-        moTa: txt(S),
-        ngayThanhLap: { type: S.DATEONLY },
-      }, { transaction: t });
+      // 4. sinhVien
+      await queryInterface.createTable(
+        'sinhVien',
+        {
+          MSV: buildIdColumn(Sequelize, { primaryKey: true }),
+          CCCD: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'ttcn',
+              key: 'CCCD',
+            },
+          },
+          maKhoa: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'Khoa',
+              key: 'maKhoa',
+            },
+          },
+          trangThai: buildStringColumn(Sequelize),
+          namHoc: {
+            type: Sequelize.INTEGER,
+          },
+          khoaDaoTao: buildStringColumn(Sequelize),
+          tenNganHang: buildStringColumn(Sequelize),
+          soTaiKhoan: buildStringColumn(Sequelize),
+          GPA: {
+            type: Sequelize.FLOAT,
+          },
+          CPA: {
+            type: Sequelize.FLOAT,
+          },
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('heDaoTao', {
-        maHe: id(S, { primaryKey: true }),
-        tenHe: str(S),
-        donVi: str(S),
-        yeuCauDauVao: txt(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'heDaoTao',
+        {
+          maHe: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenHe: buildStringColumn(Sequelize),
+          donVi: buildStringColumn(Sequelize),
+          yeuCauDauVao: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('bac', {
-        maBac: id(S, { primaryKey: true }),
-        tenBac: str(S),
-        thoiGianDaoTao: { type: S.INTEGER },
-        dieuKien: txt(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'bac',
+        {
+          maBac: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenBac: buildStringColumn(Sequelize),
+          thoiGianDaoTao: {
+            type: Sequelize.INTEGER,
+          },
+          dieuKien: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('chuongTrinhDaoTao', {
-        maCT: id(S, { primaryKey: true }),
-        tenCT: str(S),
-        tenDonVi: str(S),
-        giamDoc: str(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'chuongTrinhDaoTao',
+        {
+          maCT: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenCT: buildStringColumn(Sequelize),
+          tenDonVi: buildStringColumn(Sequelize),
+          giamDoc: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('chuyenNganh', {
-        maChuyenNganh: id(S, { primaryKey: true }),
-        maKhoa: { ...id(S), ...ref('Khoa', 'maKhoa') },
-        maHe: { ...id(S), ...ref('heDaoTao', 'maHe') },
-        maBac: { ...id(S), ...ref('bac', 'maBac') },
-        tenChuyenNganh: str(S),
-        soTinChi: { type: S.INTEGER },
-        bangCap: str(S),
-        dieuKien: txt(S),
-      }, { transaction: t });
+      // 5. chuyenNganh (Added bangCap)
+      await queryInterface.createTable(
+        'chuyenNganh',
+        {
+          maChuyenNganh: buildIdColumn(Sequelize, { primaryKey: true }),
+          maKhoa: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'Khoa',
+              key: 'maKhoa',
+            },
+          },
+          maHe: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'heDaoTao',
+              key: 'maHe',
+            },
+          },
+          maBac: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'bac',
+              key: 'maBac',
+            },
+          },
+          tenChuyenNganh: buildStringColumn(Sequelize),
+          soTinChi: {
+            type: Sequelize.INTEGER,
+          },
+          bangCap: buildStringColumn(Sequelize),
+          dieuKien: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('mon', {
-        maMon: id(S, { primaryKey: true }),
-        maKhoa: { ...id(S), ...ref('Khoa', 'maKhoa') },
-        tenMon: str(S),
-        kieuMonHoc: str(S),
-        moTa: txt(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'mon',
+        {
+          maMon: buildIdColumn(Sequelize, { primaryKey: true }),
+          maKhoa: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'Khoa',
+              key: 'maKhoa',
+            },
+          },
+          tenMon: buildStringColumn(Sequelize),
+          kieuMonHoc: buildStringColumn(Sequelize),
+          moTa: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('monDaoTao', {
-        maCT: { ...id(S, { primaryKey: true }), ...ref('chuongTrinhDaoTao', 'maCT') },
-        maMon: { ...id(S, { primaryKey: true }), ...ref('mon', 'maMon') },
-        maChuyenNganh: { ...id(S, { primaryKey: true }), ...ref('chuyenNganh', 'maChuyenNganh') },
-        soTinChi: { type: S.INTEGER },
-        soTietLyThuyet: { type: S.INTEGER },
-        soTietThucHanh: { type: S.INTEGER },
-        hocPhi: { type: S.DECIMAL(18, 2) },
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'monDaoTao',
+        {
+          maCT: {
+            ...buildIdColumn(Sequelize, {
+              primaryKey: true,
+            }),
+            references: {
+              model: 'chuongTrinhDaoTao',
+              key: 'maCT',
+            },
+          },
+          maMon: {
+            ...buildIdColumn(Sequelize, {
+              primaryKey: true,
+            }),
+            references: {
+              model: 'mon',
+              key: 'maMon',
+            },
+          },
+          maChuyenNganh: {
+            ...buildIdColumn(Sequelize, {
+              primaryKey: true,
+            }),
+            references: {
+              model: 'chuyenNganh',
+              key: 'maChuyenNganh',
+            },
+          },
+          soTinChi: {
+            type: Sequelize.INTEGER,
+          },
+          soTietLyThuyet: {
+            type: Sequelize.INTEGER,
+          },
+          soTietThucHanh: {
+            type: Sequelize.INTEGER,
+          },
+          hocPhi: {
+            type: Sequelize.DECIMAL(18, 2),
+          },
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('monTienQuyet', {
-        maCT: id(S, { primaryKey: true }),
-        maMon: id(S, { primaryKey: true }),
-        maChuyenNganh: id(S, { primaryKey: true }),
-        maTienQuyet: { ...id(S, { primaryKey: true }), ...ref('mon', 'maMon') },
-        moTa: txt(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'bangDiem',
+        {
+          maMon: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'mon',
+              key: 'maMon',
+            },
+          },
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          diemSo: {
+            type: Sequelize.FLOAT,
+          },
+          diemChu: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.addConstraint('monTienQuyet', {
-        fields: ['maCT', 'maMon', 'maChuyenNganh'],
-        type: 'foreign key',
-        name: 'fk_monTienQuyet_monDaoTao',
-        references: { table: 'monDaoTao', fields: ['maCT', 'maMon', 'maChuyenNganh'] },
-        transaction: t,
-      });
+      await queryInterface.createTable(
+        'lopHanhChinh',
+        {
+          maLop: buildIdColumn(Sequelize, { primaryKey: true }),
+          maHe: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'heDaoTao',
+              key: 'maHe',
+            },
+          },
+          maBac: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'bac',
+              key: 'maBac',
+            },
+          },
+          maChuyenNganh: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'chuyenNganh',
+              key: 'maChuyenNganh',
+            },
+          },
+          coVanhocTap: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'canBo',
+              key: 'MCB',
+            },
+          },
+          siSo: {
+            type: Sequelize.INTEGER,
+          },
+          moTa: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('bangDiem', {
-        maMon: { ...id(S, { primaryKey: true }), ...ref('mon', 'maMon') },
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        diemSo: { type: S.FLOAT },
-        diemChu: str(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'lopTinChi',
+        {
+          maLop: buildIdColumn(Sequelize, { primaryKey: true }),
+          MCB: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'canBo',
+              key: 'MCB',
+            },
+          },
+          maMon: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'mon',
+              key: 'maMon',
+            },
+          },
+          kyDaoTao: buildStringColumn(Sequelize),
+          soLuongSinhVienMax: {
+            type: Sequelize.INTEGER,
+          },
+          soLuongSinhVien: {
+            type: Sequelize.INTEGER,
+          },
+          trangThai: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('lopHanhChinh', {
-        maLop: id(S, { primaryKey: true }),
-        maHe: { ...id(S), ...ref('heDaoTao', 'maHe') },
-        maBac: { ...id(S), ...ref('bac', 'maBac') },
-        maChuyenNganh: { ...id(S), ...ref('chuyenNganh', 'maChuyenNganh') },
-        coVanhocTap: { ...id(S), ...ref('canBo', 'MCB') },
-        siSo: { type: S.INTEGER },
-        moTa: txt(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'sinhVien_LopHanhChinh',
+        {
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          maLop: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'lopHanhChinh',
+              key: 'maLop',
+            },
+          },
+          ngayDangKy: {
+            type: Sequelize.DATEONLY,
+          },
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('lopTinChi', {
-        maLop: id(S, { primaryKey: true }),
-        MCB: { ...id(S), ...ref('canBo', 'MCB') },
-        maMon: { ...id(S), ...ref('mon', 'maMon') },
-        kyDaoTao: { type: S.INTEGER },
-        soLuongSinhVienMax: { type: S.INTEGER },
-        soLuongSinhVien: { type: S.INTEGER },
-        trangThai: str(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'sinhVien_LopTinChi',
+        {
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          maLop: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'lopTinChi',
+              key: 'maLop',
+            },
+          },
+          ngayDangKy: {
+            type: Sequelize.DATEONLY,
+          },
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('sinhVien_LopHanhChinh', {
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        maLop: { ...id(S, { primaryKey: true }), ...ref('lopHanhChinh', 'maLop') },
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'hocBong',
+        {
+          maHocBong: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenHocBong: buildStringColumn(Sequelize),
+          loaiHocBong: buildStringColumn(Sequelize),
+          dieuKien: buildTextColumn(Sequelize),
+          giaTri: {
+            type: Sequelize.DECIMAL(18, 2),
+          },
+          moTa: buildTextColumn(Sequelize),
+          donViCungCap: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('sinhVien_LopTinChi', {
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        maLop: { ...id(S, { primaryKey: true }), ...ref('lopTinChi', 'maLop') },
-        ngayDangKy: { type: S.DATEONLY },
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'sinhVien_HocBong',
+        {
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          maHocBong: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'hocBong',
+              key: 'maHocBong',
+            },
+          },
+          ngayNhan: {
+            type: Sequelize.DATEONLY,
+          },
+          phanTram: {
+            type: Sequelize.DECIMAL(5, 2),
+          },
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('hocBong', {
-        maHocBong: id(S, { primaryKey: true }),
-        tenHocBong: str(S),
-        loaiHocBong: str(S),
-        dieuKien: txt(S),
-        giaTri: { type: S.DECIMAL(18, 2) },
-        moTa: txt(S),
-        donViCungCap: str(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'nghienCuu',
+        {
+          maDeTai: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenDeTai: buildStringColumn(Sequelize),
+          capDeTai: buildStringColumn(Sequelize),
+          phanLoai: buildStringColumn(Sequelize),
+          donVi: buildStringColumn(Sequelize),
+          kinhPhi: {
+            type: Sequelize.DECIMAL(18, 2),
+          },
+          thoiGianBatDau: {
+            type: Sequelize.DATEONLY,
+          },
+          thoiGianKetThuc: {
+            type: Sequelize.DATEONLY,
+          },
+          moTa: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('sinhVien_HocBong', {
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        maHocBong: { ...id(S, { primaryKey: true }), ...ref('hocBong', 'maHocBong') },
-        ngayNhan: { type: S.DATEONLY },
-        phanTram: { type: S.DECIMAL(5, 2) },
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'sinhVien_NghienCuu',
+        {
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          maDeTai: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'nghienCuu',
+              key: 'maDeTai',
+            },
+          },
+          MCB: {
+            ...buildIdColumn(Sequelize),
+            references: {
+              model: 'canBo',
+              key: 'MCB',
+            },
+          },
+          ngayThamGia: {
+            type: Sequelize.DATEONLY,
+          },
+          trangThai: buildStringColumn(Sequelize),
+          moTa: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('nghienCuu', {
-        maDeTai: id(S, { primaryKey: true }),
-        tenDeTai: str(S),
-        capDeTai: str(S),
-        phanLoai: str(S),
-        donVi: str(S),
-        kinhPhi: { type: S.DECIMAL(18, 2) },
-        thoiGianBatDau: { type: S.DATEONLY },
-        thoiGianKetThuc: { type: S.DATEONLY },
-        moTa: txt(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'doAnTN',
+        {
+          maDoAn: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenDoAn: buildStringColumn(Sequelize),
+          trangThai: buildStringColumn(Sequelize),
+          diem: {
+            type: Sequelize.FLOAT,
+          },
+          ngayBatDau: {
+            type: Sequelize.DATEONLY,
+          },
+          ngayBaoVe: {
+            type: Sequelize.DATEONLY,
+          },
+          bacDoAn: buildStringColumn(Sequelize),
+          moTa: buildTextColumn(Sequelize),
+          dinhKem: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('sinhVien_NghienCuu', {
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        maDeTai: { ...id(S, { primaryKey: true }), ...ref('nghienCuu', 'maDeTai') },
-        vaiTro: str(S),
-        ngayThamGia: { type: S.DATEONLY },
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'sinhVien_DoAnTN',
+        {
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          maDoAn: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'doAnTN',
+              key: 'maDoAn',
+            },
+          },
+          ngayDangKy: {
+            type: Sequelize.DATEONLY,
+          },
+          trangThai: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('doAnTN', {
-        maDoAn: id(S, { primaryKey: true }),
-        tenDoAn: str(S),
-        trangThai: str(S),
-        diem: { type: S.FLOAT },
-        ngayBatDau: { type: S.DATEONLY },
-        ngayBaoVe: { type: S.DATEONLY },
-        bacDoAn: str(S),
-        moTa: txt(S),
-        dinhKem: str(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'duHoc',
+        {
+          maSuat: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenChuongTrinh: buildStringColumn(Sequelize),
+          loaiHinh: buildStringColumn(Sequelize),
+          hocBong: {
+            type: Sequelize.BOOLEAN,
+          },
+          donVi: buildStringColumn(Sequelize),
+          chuyenNganh: buildStringColumn(Sequelize),
+          kinhPhiTaiTro: {
+            type: Sequelize.DECIMAL(18, 2),
+          },
+          bac: buildStringColumn(Sequelize),
+          namBatDau: {
+            type: Sequelize.INTEGER,
+          },
+          namKetThuc: {
+            type: Sequelize.INTEGER,
+          },
+          dieuKien: buildTextColumn(Sequelize),
+          trangThai: buildStringColumn(Sequelize),
+          quocGiaTheoHoc: buildStringColumn(Sequelize),
+          donViTheoHoc: buildStringColumn(Sequelize),
+          moTa: buildTextColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('sinhVien_DoAnTN', {
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        maDoAn: { ...id(S, { primaryKey: true }), ...ref('doAnTN', 'maDoAn') },
-        vaiTro: str(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'sinhVien_DuHoc',
+        {
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          maSuat: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'duHoc',
+              key: 'maSuat',
+            },
+          },
+          ngayDangKy: {
+            type: Sequelize.DATEONLY,
+          },
+          phanTram: {
+            type: Sequelize.DECIMAL(5, 2),
+          },
+          trangThai: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('duHoc', {
-        maSuat: id(S, { primaryKey: true }),
-        tenChuongTrinh: str(S),
-        loaiHinh: str(S),
-        hocBong: { type: S.BOOLEAN },
-        donVi: str(S),
-        chuyenNganh: str(S),
-        kinhPhiTaiTro: { type: S.DECIMAL(18, 2) },
-        bac: str(S),
-        namBatDau: { type: S.INTEGER },
-        namKetThuc: { type: S.INTEGER },
-        dieuKien: txt(S),
-        trangThai: str(S),
-        quocGiaTheoHoc: str(S),
-        donViTheoHoc: str(S),
-        moTa: txt(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'suKien',
+        {
+          maSuKien: buildIdColumn(Sequelize, { primaryKey: true }),
+          tenSuKien: buildStringColumn(Sequelize),
+          donViToChuc: buildStringColumn(Sequelize),
+          soLuongThamGia: {
+            type: Sequelize.INTEGER,
+          },
+          diaDiem: buildStringColumn(Sequelize),
+          thoiGianBatDau: {
+            type: Sequelize.DATE,
+          },
+          thoiGianKetThuc: {
+            type: Sequelize.DATE,
+          },
+          trangThai: buildStringColumn(Sequelize),
+          moTa: buildTextColumn(Sequelize),
+          loaiSuKien: buildStringColumn(Sequelize),
+          batBuoc: {
+            type: Sequelize.BOOLEAN,
+          },
+        },
+        { transaction }
+      );
 
-      await queryInterface.createTable('sinhVien_DuHoc', {
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        maSuat: { ...id(S, { primaryKey: true }), ...ref('duHoc', 'maSuat') },
-        trangThai: str(S),
-        ngayDangKy: { type: S.DATEONLY },
-      }, { transaction: t });
-
-      await queryInterface.createTable('suKien', {
-        maSuKien: id(S, { primaryKey: true }),
-        tenSuKien: str(S),
-        donViToChuc: str(S),
-        soLuongThamGia: { type: S.INTEGER },
-        diaDiem: str(S),
-        thoiGianBatDau: { type: S.DATE },
-        thoiGianKetThuc: { type: S.DATE },
-        trangThai: str(S),
-        moTa: txt(S),
-        loaiSuKien: str(S),
-        batBuoc: { type: S.BOOLEAN },
-      }, { transaction: t });
-
-      await queryInterface.createTable('sinhVien_SuKien', {
-        MSV: { ...id(S, { primaryKey: true }), ...ref('sinhVien', 'MSV') },
-        maSuKien: { ...id(S, { primaryKey: true }), ...ref('suKien', 'maSuKien') },
-        trangThai: str(S),
-      }, { transaction: t });
+      await queryInterface.createTable(
+        'sinhVien_SuKien',
+        {
+          MSV: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'sinhVien',
+              key: 'MSV',
+            },
+          },
+          maSuKien: {
+            ...buildIdColumn(Sequelize, { primaryKey: true }),
+            references: {
+              model: 'suKien',
+              key: 'maSuKien',
+            },
+          },
+          trangThai: buildStringColumn(Sequelize),
+        },
+        { transaction }
+      );
     });
   },
 
   async down(queryInterface) {
-    await queryInterface.sequelize.transaction(async (t) => {
-      const drops = [
-        'sinhVien_SuKien', 'suKien',
-        'sinhVien_DuHoc', 'duHoc',
-        'sinhVien_DoAnTN', 'doAnTN',
-        'sinhVien_NghienCuu', 'nghienCuu',
-        'sinhVien_HocBong', 'hocBong',
-        'sinhVien_LopTinChi', 'sinhVien_LopHanhChinh',
-        'lopTinChi', 'lopHanhChinh',
-        'bangDiem',
-      ];
-      for (const tbl of drops) await queryInterface.dropTable(tbl, { transaction: t });
-      await queryInterface.removeConstraint('monTienQuyet', 'fk_monTienQuyet_monDaoTao', { transaction: t });
-      const tail = [
-        'monTienQuyet', 'monDaoTao', 'mon',
-        'chuyenNganh', 'chuongTrinhDaoTao', 'bac', 'heDaoTao',
-        'Khoa', 'canBo', 'sinhVien', 'ttcn',
-      ];
-      for (const tbl of tail) await queryInterface.dropTable(tbl, { transaction: t });
+    await queryInterface.sequelize.transaction(async (transaction) => {
+      await queryInterface.dropTable('sinhVien_SuKien', { transaction });
+      await queryInterface.dropTable('suKien', { transaction });
+      await queryInterface.dropTable('sinhVien_DuHoc', { transaction });
+      await queryInterface.dropTable('duHoc', { transaction });
+      await queryInterface.dropTable('sinhVien_DoAnTN', { transaction });
+      await queryInterface.dropTable('doAnTN', { transaction });
+      await queryInterface.dropTable('sinhVien_NghienCuu', { transaction });
+      await queryInterface.dropTable('nghienCuu', { transaction });
+      await queryInterface.dropTable('sinhVien_HocBong', { transaction });
+      await queryInterface.dropTable('hocBong', { transaction });
+      await queryInterface.dropTable('sinhVien_LopTinChi', { transaction });
+      await queryInterface.dropTable('sinhVien_LopHanhChinh', { transaction });
+      await queryInterface.dropTable('lopTinChi', { transaction });
+      await queryInterface.dropTable('lopHanhChinh', { transaction });
+      await queryInterface.dropTable('bangDiem', { transaction });
+      await queryInterface.dropTable('monDaoTao', { transaction });
+      await queryInterface.dropTable('mon', { transaction });
+      await queryInterface.dropTable('chuyenNganh', { transaction });
+      await queryInterface.dropTable('chuongTrinhDaoTao', { transaction });
+      await queryInterface.dropTable('bac', { transaction });
+      await queryInterface.dropTable('heDaoTao', { transaction });
+      await queryInterface.dropTable('sinhVien', { transaction });
+      await queryInterface.dropTable('canBo', { transaction });
+      await queryInterface.dropTable('Khoa', { transaction });
+      await queryInterface.dropTable('ttcn', { transaction });
     });
   },
 };

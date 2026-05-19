@@ -22,15 +22,6 @@ export const MonDaoTaoSchema = z.object({
 });
 export type MonDaoTao = z.infer<typeof MonDaoTaoSchema>;
 
-export const MonTienQuyetSchema = z.object({
-  maCT: IdString,
-  maMon: IdString,
-  maChuyenNganh: IdString,
-  maTienQuyet: IdString,
-  moTa: LongText,
-});
-export type MonTienQuyet = z.infer<typeof MonTienQuyetSchema>;
-
 export const BangDiemSchema = z.object({
   maMon: IdString,
   MSV: IdString,
@@ -38,3 +29,4 @@ export const BangDiemSchema = z.object({
   diemChu: z.enum(DIEM_CHU).optional().nullable(),
 });
 export type BangDiem = z.infer<typeof BangDiemSchema>;
+

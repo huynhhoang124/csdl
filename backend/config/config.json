@@ -1,8 +1,8 @@
 {
   "development": {
     "username": "sa",
-    "password": "QldhStrong!Pass1",
-    "database": "qldh",
+    "password": "Luandz25032005",
+    "database": "qldhcsdl",
     "host": "localhost",
     "port": 1433,
     "dialect": "mssql",

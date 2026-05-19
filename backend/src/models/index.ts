@@ -28,7 +28,7 @@ export const CanBo = sequelize.define('canBo', {
 }, common);
 
 export const Khoa = sequelize.define('Khoa', {
-  maKhoa: { ...idCol(), primaryKey: true }, MCB: idCol(),
+  maKhoa: { ...idCol(), primaryKey: true },
   vanPhongKhoa: strCol(), dienThoaiLienHe: strCol(), emailLienHe: strCol(),
   moTa: txtCol(), ngayThanhLap: DataTypes.DATEONLY,
 }, common);

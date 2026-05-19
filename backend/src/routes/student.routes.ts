@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { QueryTypes } from 'sequelize';
 import { SinhVien, BangDiem } from '../models/index.js';
 import { authMiddleware, requireRole, type AuthedRequest } from '../middlewares/auth.js';
 
@@ -21,21 +22,26 @@ studentRouter.get('/:MSV/gpa', requireRole('student', 'teacher'), async (req, re
   try {
     const { sequelize } = await import('../models/index.js');
     const MSV = req.params.MSV;
+    // Dùng subquery lấy MAX(soTinChi) theo maMon để tránh nhân bản khi 1 môn có nhiều dòng monDaoTao
     const query = `
-      SELECT 
-        SUM(b.diemSo * COALESCE((SELECT TOP 1 soTinChi FROM monDaoTao m WHERE m.maMon = b.maMon), 3)) / 
-        NULLIF(SUM(COALESCE((SELECT TOP 1 soTinChi FROM monDaoTao m WHERE m.maMon = b.maMon), 3)), 0) as CPA
+      SELECT
+        SUM(b.diemSo * COALESCE(mdt.soTinChi, 3)) /
+        NULLIF(SUM(COALESCE(mdt.soTinChi, 3)), 0) AS CPA
       FROM bangDiem b
+      LEFT JOIN (
+        SELECT maMon, MAX(soTinChi) AS soTinChi
+        FROM monDaoTao
+        GROUP BY maMon
+      ) mdt ON mdt.maMon = b.maMon
       WHERE b.MSV = :MSV
     `;
     const result = await sequelize.query(query, {
       replacements: { MSV },
-      type: (sequelize as any).QueryTypes.SELECT
+      type: QueryTypes.SELECT,
     }) as any[];
-    
+
     const CPA = result[0]?.CPA ? Number(result[0].CPA).toFixed(2) : 0;
-    
-    // Lưu ngược lại vào db nếu cần
+
     const { SinhVien } = await import('../models/index.js');
     await SinhVien.update({ GPA: CPA, CPA: CPA }, { where: { MSV } });
 

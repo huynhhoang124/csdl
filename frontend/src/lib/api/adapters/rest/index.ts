@@ -1,7 +1,3 @@
-/**
- * REST adapters — gọi Express backend thật qua axios.
- * Endpoints khớp với `backend/src/routes/*`.
- */
 import type {
   IAuthRepository, IStudentRepository, ITeacherRepository,
   ICourseRepository, IClassRepository, IGradeRepository, IGenericRepository,
@@ -14,7 +10,16 @@ import type {
 } from '@qldh/shared';
 import { http } from './httpClient';
 
-const notSupported = (m: string) => { throw new Error(`[REST] ${m} chưa được cài ở backend.`); };
+const notSupported = (m: string) => {
+  throw new Error(`[REST] ${m} is not supported by the Luan backend.`);
+};
+const adminTables = (table: TableName) => `/admin/tables/${table}`;
+const pageFromItems = <T>(items: T[], p?: ListParams): Page<T> => ({
+  items,
+  total: items.length,
+  page: p?.page ?? 1,
+  pageSize: p?.pageSize ?? items.length,
+});
 
 export class RestAuthRepository implements IAuthRepository {
   async login(input: LoginRequest): Promise<LoginResponse> {
@@ -34,7 +39,7 @@ export class RestStudentRepository implements IStudentRepository {
     return data;
   }
   async list(p?: ListParams): Promise<Page<SinhVien>> {
-    const { data } = await http.get<Page<SinhVien>>('/admin/tables/sinhVien', { params: p });
+    const { data } = await http.get<Page<SinhVien>>(adminTables('sinhVien'), { params: p });
     return data;
   }
   async create(): Promise<SinhVien> { return notSupported('student.create') as never; }
@@ -55,9 +60,12 @@ export class RestStudentRepository implements IStudentRepository {
 }
 
 export class RestTeacherRepository implements ITeacherRepository {
-  async findById(id: string) { const { data } = await http.get<CanBo>(`/teachers/${id}`); return data; }
+  async findById(id: string) {
+    const { data } = await http.get<CanBo>(`/teachers/${id}`);
+    return data;
+  }
   async list(p?: ListParams): Promise<Page<CanBo>> {
-    const { data } = await http.get<Page<CanBo>>('/admin/tables/canBo', { params: p });
+    const { data } = await http.get<Page<CanBo>>(adminTables('canBo'), { params: p });
     return data;
   }
   async create(): Promise<CanBo> { return notSupported('teacher.create') as never; }
@@ -70,44 +78,62 @@ export class RestTeacherRepository implements ITeacherRepository {
 }
 
 export class RestCourseRepository implements ICourseRepository {
-  async findById(id: string) { const { data } = await http.get<Mon>(`/admin/tables/mon`, { params: { search: id } }); return (data as unknown as { items: Mon[] }).items[0] ?? null; }
+  async findById(id: string) {
+    const { data } = await http.get<Page<Mon>>(adminTables('mon'), { params: { search: id } });
+    return data.items[0] ?? null;
+  }
   async list(p?: ListParams): Promise<Page<Mon>> {
-    const { data } = await http.get<Page<Mon>>('/admin/tables/mon', { params: p });
+    const { data } = await http.get<Page<Mon>>(adminTables('mon'), { params: p });
     return data;
   }
   async create(): Promise<Mon> { return notSupported('course.create') as never; }
   async update(): Promise<Mon> { return notSupported('course.update') as never; }
   async delete(): Promise<void> { notSupported('course.delete'); }
   async getPrograms(): Promise<MonDaoTao[]> { return notSupported('course.getPrograms') as never; }
-  async canRegister(): Promise<{ ok: boolean; missing: string[] }> { return { ok: true, missing: [] }; }
+  async getPrerequisites(): Promise<Record<string, unknown>[]> { return notSupported('course.getPrerequisites') as never; }
+  async canRegister(): Promise<{ ok: boolean; missing: string[] }> { return notSupported('course.canRegister') as never; }
 }
 
 export class RestClassRepository implements IClassRepository {
   creditClasses = {
-    async findById(id: string) { const { data } = await http.get<Page<LopTinChi>>('/admin/tables/lopTinChi', { params: { search: id } }); return data.items[0] ?? null; },
+    async findById(id: string) {
+      const { data } = await http.get<{ items: LopTinChi[] }>('/students/available-classes');
+      return data.items.find((item) => item.maLop === id) ?? null;
+    },
     async list(p?: ListParams): Promise<Page<LopTinChi>> {
       const { data } = await http.get<{ items: LopTinChi[] }>('/students/available-classes');
-      return { items: data.items, total: data.items.length, page: 1, pageSize: data.items.length };
+      const items = p?.search
+        ? data.items.filter((item) => Object.values(item).some((value) => String(value ?? '').includes(p.search!)))
+        : data.items;
+      return pageFromItems(items, p);
     },
     async create(): Promise<LopTinChi> { return notSupported('creditClasses.create') as never; },
     async update(): Promise<LopTinChi> { return notSupported('creditClasses.update') as never; },
     async delete(): Promise<void> { notSupported('creditClasses.delete'); },
   };
   adminClasses = {
-    async findById(id: string) { const { data } = await http.get<Page<LopHanhChinh>>('/admin/tables/lopHanhChinh', { params: { search: id } }); return data.items[0] ?? null; },
-    async list(p?: ListParams): Promise<Page<LopHanhChinh>> { const { data } = await http.get<Page<LopHanhChinh>>('/admin/tables/lopHanhChinh', { params: p }); return data; },
+    async findById(id: string) {
+      const { data } = await http.get<Page<LopHanhChinh>>(adminTables('lopHanhChinh'), { params: { search: id } });
+      return data.items[0] ?? null;
+    },
+    async list(p?: ListParams): Promise<Page<LopHanhChinh>> {
+      const { data } = await http.get<Page<LopHanhChinh>>(adminTables('lopHanhChinh'), { params: p });
+      return data;
+    },
     async create(): Promise<LopHanhChinh> { return notSupported('adminClasses.create') as never; },
     async update(): Promise<LopHanhChinh> { return notSupported('adminClasses.update') as never; },
     async delete(): Promise<void> { notSupported('adminClasses.delete'); },
   };
-  async registerCreditClass(msv: string, maLop: string): Promise<SinhVien_LopTinChi> {
-    return (await http.post(`/students/${msv}/classes/${maLop}/register`)).data;
+  async registerCreditClass(MSV: string, maLop: string): Promise<SinhVien_LopTinChi> {
+    const { data } = await http.post<SinhVien_LopTinChi>(`/students/${MSV}/classes/${maLop}/register`);
+    return data;
   }
-  async unregisterCreditClass(msv: string, maLop: string): Promise<void> {
-    await http.delete(`/students/${msv}/classes/${maLop}/register`);
+  async unregisterCreditClass(MSV: string, maLop: string): Promise<void> {
+    await http.delete(`/students/${MSV}/classes/${maLop}/register`);
   }
-  async listRegistrations(msv: string): Promise<SinhVien_LopTinChi[]> { 
-    return (await http.get(`/students/${msv}/classes`)).data;
+  async listRegistrations(MSV: string): Promise<SinhVien_LopTinChi[]> {
+    const { data } = await http.get<SinhVien_LopTinChi[]>(`/students/${MSV}/classes`);
+    return data;
   }
 }
 
@@ -126,7 +152,7 @@ export class RestGradeRepository implements IGradeRepository {
 
 export class RestGenericRepository implements IGenericRepository {
   async list(table: TableName, p?: ListParams): Promise<Page<Record<string, unknown>>> {
-    const { data } = await http.get<Page<Record<string, unknown>>>(`/admin/tables/${table}`, { params: p });
+    const { data } = await http.get<Page<Record<string, unknown>>>(adminTables(table), { params: p });
     return data;
   }
   async get(table: TableName, pk: Record<string, unknown>) {
@@ -134,24 +160,24 @@ export class RestGenericRepository implements IGenericRepository {
     return page.items[0] ?? null;
   }
   async create(table: TableName, data: Record<string, unknown>) {
-    const { data: r } = await http.post<Record<string, unknown>>(`/admin/tables/${table}`, data);
+    const { data: r } = await http.post<Record<string, unknown>>(adminTables(table), data);
     return r;
   }
   async update(table: TableName, pk: Record<string, unknown>, data: Record<string, unknown>) {
-    const { data: r } = await http.put<Record<string, unknown>>(`/admin/tables/${table}`, { pk, data });
+    const { data: r } = await http.put<Record<string, unknown>>(adminTables(table), { pk, data });
+    return r;
+  }
+  async upsert(table: TableName, data: Record<string, unknown>) {
+    const { data: r } = await http.post<Record<string, unknown>>(`${adminTables(table)}/upsert`, data);
     return r;
   }
   async delete(table: TableName, pk: Record<string, unknown>) {
-    await http.delete(`/admin/tables/${table}`, { data: pk });
+    await http.delete(adminTables(table), { data: pk });
   }
-  async upsert(table: TableName, data: Record<string, unknown>) {
-    const { data: r } = await http.post<Record<string, unknown>>(`/admin/tables/${table}/upsert`, data);
-    return r;
+  async resetAndReseed() {
+    return notSupported('resetAndReseed') as never;
   }
-  async resetAndReseed(): Promise<{ ok: true; durationMs: number }> {
-    return { ok: true, durationMs: 0 };
-  }
-  async rest(path: string): Promise<any> {
+  async rest(path: string) {
     const { data } = await http.get(path);
     return data;
   }

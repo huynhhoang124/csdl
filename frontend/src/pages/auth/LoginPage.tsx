@@ -10,32 +10,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { GraduationCap, BookOpenCheck, Terminal, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { GraduationCap, BookOpenCheck, Terminal, ArrowLeft } from 'lucide-react';
 
 interface Props { role: Role }
 
-const ROLE_META: Record<Role, { title: string; subtitle: string; icon: React.ReactNode; hint: string; gradient: string }> = {
+const ROLE_META: Record<Role, { title: string; subtitle: string; icon: React.ReactNode; hint: string; gradient: string; usernameLabel: string }> = {
   student: {
-    title: 'Đăng nhập Sinh viên',
-    subtitle: 'Truy cập bảng điểm, đăng ký lớp, hoạt động',
+    title: 'Dang nhap Sinh vien',
+    subtitle: 'Truy cap bang diem, dang ky lop, hoat dong',
     icon: <GraduationCap className="size-10" />,
-    hint: 'Mặc định: SV001 / student123',
+    hint: 'Mac dinh: SV001 / student123',
     gradient: 'from-indigo-600 via-purple-600 to-fuchsia-600',
+    usernameLabel: 'Ma sinh vien (MSV)',
   },
   teacher: {
-    title: 'Đăng nhập Giảng viên',
-    subtitle: 'Quản lý lớp tín chỉ, nhập điểm, hướng dẫn',
+    title: 'Dang nhap Giang vien',
+    subtitle: 'Quan ly lop tin chi, nhap diem, huong dan',
     icon: <BookOpenCheck className="size-10" />,
-    hint: 'Mặc định: CB001 / teacher123',
+    hint: 'Mac dinh: CB001 / teacher123',
     gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+    usernameLabel: 'Ma can bo (MCB)',
   },
   admin: {
-    title: 'Đăng nhập Quản trị',
-    subtitle: 'Phòng Đào tạo — quản lý toàn bộ hệ thống',
-    icon: <ShieldCheck className="size-10" />,
-    hint: 'Mặc định: ADMIN01 / admin123',
-    gradient: 'from-indigo-700 via-blue-700 to-purple-700',
-  }
+    title: 'Admin Console',
+    subtitle: 'Toan quyen quan tri he thong',
+    icon: <Terminal className="size-10" />,
+    hint: 'ADMIN01 / admin123',
+    gradient: 'from-slate-900 via-slate-800 to-zinc-900',
+    usernameLabel: 'Ma admin',
+  },
 };
 
 export function LoginPage({ role }: Props) {
@@ -53,10 +56,10 @@ export function LoginPage({ role }: Props) {
     setSubmitting(true);
     try {
       const user = await login(data);
-      toast.success(`Xin chào ${user.displayName}!`);
+      toast.success(`Xin chao ${user.displayName}!`);
       navigate(`/${user.role}`, { replace: true });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Đăng nhập thất bại');
+      toast.error(e instanceof Error ? e.message : 'Dang nhap that bai');
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +74,7 @@ export function LoginPage({ role }: Props) {
         className="w-full max-w-md"
       >
         <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-6 text-sm">
-          <ArrowLeft className="size-4" /> Quay lại trang chủ
+          <ArrowLeft className="size-4" /> Quay lai trang chu
         </Link>
         <Card className="backdrop-blur bg-white/95 dark:bg-slate-900/95 shadow-2xl">
           <CardHeader>
@@ -88,22 +91,20 @@ export function LoginPage({ role }: Props) {
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">
-                  {role === 'student' ? 'Mã sinh viên (MSV)' : role === 'teacher' || role === 'admin' ? 'Mã cán bộ (MCB)' : 'Email'}
-                </Label>
+                <Label htmlFor="username">{meta.usernameLabel}</Label>
                 <Input id="username" autoComplete="username" {...register('username')} />
                 {errors.username && <p className="text-xs text-rose-600">{errors.username.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
+                <Label htmlFor="password">Mat khau</Label>
                 <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
                 {errors.password && <p className="text-xs text-rose-600">{errors.password.message}</p>}
               </div>
-              <p className="text-xs text-slate-500 italic">💡 {meta.hint}</p>
+              <p className="text-xs text-slate-500 italic">{meta.hint}</p>
             </CardContent>
             <CardFooter>
               <Button type="submit" className="w-full" size="lg" disabled={submitting || loading}>
-                {submitting || loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                {submitting || loading ? 'Dang dang nhap...' : 'Dang nhap'}
               </Button>
             </CardFooter>
           </form>

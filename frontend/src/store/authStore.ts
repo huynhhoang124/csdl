@@ -9,6 +9,7 @@ interface AuthState {
   user: AuthUser | null;
   token: string | null;
   loading: boolean;
+  hydrated: boolean;
   error: string | null;
   login: (input: LoginRequest) => Promise<AuthUser>;
   impersonate: (targetUserId: string) => Promise<void>;
@@ -22,6 +23,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       loading: false,
+      hydrated: false,
       error: null,
       async login(input) {
         set({ loading: true, error: null });
@@ -49,10 +51,13 @@ export const useAuthStore = create<AuthState>()(
       },
       async hydrate() {
         const token = localStorage.getItem(TOKEN_KEY);
-        if (!token) return;
+        if (!token) {
+          set({ hydrated: true });
+          return;
+        }
         const user = await repositories.auth.me();
-        if (user) set({ user, token });
-        else { localStorage.removeItem(TOKEN_KEY); set({ user: null, token: null }); }
+        if (user) set({ user, token, hydrated: true });
+        else { localStorage.removeItem(TOKEN_KEY); set({ user: null, token: null, hydrated: true }); }
       },
     }),
     {

@@ -1,5 +1,5 @@
-ài khoản demo
+Tai khoan demo backend Luan
 Role	User	Pass
-Dev	dev@qldh.local	dev123
-Student	SV0001 (→SV0150)	student123
-Teacher	CB001 (→CB030)	teacher123
+Admin	ADMIN01	admin123
+Student	SV001	student123
+Teacher	CB001	teacher123
